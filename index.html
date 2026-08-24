@@ -1,0 +1,1539 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>多平台电商数据看板</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;background:#f5f5f3;color:#2c2c2a;font-size:14px;line-height:1.6;}
+.header{background:#fff;border-bottom:1px solid #e0e0de;padding:12px 24px;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:100;}
+.header h1{font-size:17px;font-weight:600;}
+.header-right{display:flex;gap:12px;align-items:center;}
+.tabs{display:flex;gap:0;background:#fff;border-bottom:1px solid #e0e0de;padding:0 24px;}
+.tab{padding:10px 24px;cursor:pointer;font-size:14px;color:#888780;border-bottom:2px solid transparent;transition:all .2s;}
+.tab.active{color:#2563EB;border-bottom-color:#2563EB;font-weight:500;}
+.tab:hover{color:#2563EB;}
+.content{padding:10px 24px;max-width:1400px;margin:0 auto;}
+/* KPI Cards */
+.kpi-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;margin-bottom:10px;}
+.kpi-card{background:#fff;border-radius:6px;padding:3px 10px;border:1px solid #eee;display:flex;align-items:center;justify-content:space-between;min-height:32px;}
+.kpi-left{flex:1;}
+.kpi-label{font-size:10px;color:#888780;margin-bottom:0;}
+.kpi-value{font-size:17px;font-weight:600;color:#2c2c2a;line-height:1.1;}
+.kpi-right{text-align:right;}
+.kpi-delta{font-size:11px;margin-top:1px;font-weight:500;}
+.kpi-delta.up{color:#1D9E75;}
+.kpi-delta.down{color:#DC2626;}
+.kpi-delta.neutral{color:#888780;}
+.kpi-delta-label{font-size:10px;color:#aaa;display:block;margin-bottom:0;}
+.kpi-sub{font-size:11px;color:#888780;margin-top:1px;}
+/* Chart Cards */
+.chart-row-top{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:10px;}
+.chart-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:10px;}
+.chart-card{background:#fff;border-radius:8px;padding:14px 16px;border:1px solid #eee;}
+.chart-card.full{grid-column:1/-1;}
+.chart-title{font-size:13px;font-weight:500;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;}
+.chart-title select{font-size:12px;padding:4px 8px;border:1px solid #ddd;border-radius:4px;background:#fff;}
+.chart-wrap{position:relative;width:100%;height:200px;}
+.legend-row{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:6px;font-size:11px;color:#888780;}
+.legend-item{display:flex;align-items:center;gap:4px;}
+.legend-col{display:flex;flex-direction:column;gap:6px;font-size:11px;color:#888780;flex-shrink:0;}
+.share-layout{display:flex;align-items:center;gap:0;}
+.share-layout .chart-wrap{flex:1;height:200px;}
+.legend-dot{width:9px;height:9px;border-radius:2px;display:inline-block;}
+/* Data Entry Table */
+.toolbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:8px;}
+.toolbar-left{display:flex;gap:8px;align-items:center;flex-wrap:wrap;}
+.plat-filter{display:flex;align-items:center;gap:4px;margin-left:4px;}
+.plat-filter label{display:flex;align-items:center;gap:3px;font-size:12px;color:#555;cursor:pointer;padding:2px 6px;border-radius:3px;border:1px solid transparent;transition:all .15s;white-space:nowrap;}
+.plat-filter label:hover{border-color:#ccc;}
+.plat-filter label.checked{border-color:#378ADD;background:#E8F2FC;}
+.plat-filter input[type=checkbox]{zoom:0.85;margin:0;}
+.plat-filter-all{font-size:12px;color:#378ADD;cursor:pointer;white-space:nowrap;margin:0 4px;}
+.plat-filter-all:hover{text-decoration:underline;}
+.toolbar-right{display:flex;gap:8px;}
+.quick-range{display:flex;gap:4px;margin-left:2px;}
+.quick-range button{font-size:12px;padding:3px 10px;border:1px solid #ddd;border-radius:4px;background:#fff;color:#555;cursor:pointer;transition:all .15s;white-space:nowrap;}
+.quick-range button:hover{border-color:#378ADD;color:#378ADD;}
+.quick-range button.active{background:#378ADD;color:#fff;border-color:#378ADD;}
+.compare-toggle{display:flex;gap:4px;margin-left:2px;}
+.compare-toggle button{font-size:12px;padding:3px 10px;border:1px solid #ddd;border-radius:4px;background:#fff;color:#555;cursor:pointer;transition:all .15s;white-space:nowrap;}
+.compare-toggle button:hover{border-color:#059669;color:#059669;}
+.compare-toggle button.active{background:#059669;color:#fff;border-color:#059669;}
+.compare-tag{font-size:11px;color:#888780;font-weight:400;margin-left:6px;}
+.btn{padding:8px 16px;border:1px solid #ddd;border-radius:6px;background:#fff;cursor:pointer;font-size:13px;transition:all .2s;}
+.btn:hover{border-color:#2563EB;color:#2563EB;}
+.btn.primary{background:#2563EB;color:#fff;border-color:#2563EB;}
+.btn.primary:hover{background:#0C447C;}
+.btn.danger{color:#DC2626;border-color:#DC2626;}
+.btn.danger:hover{background:#FCEBEB;}
+.date-input{padding:6px 10px;border:1px solid #ddd;border-radius:6px;font-size:13px;}
+table{width:100%;border-collapse:collapse;background:#fff;border-radius:8px;overflow:hidden;box-shadow:0 0 0 1px #eee;}
+th{background:#f8f8f6;padding:10px 8px;text-align:left;font-size:12px;color:#888780;font-weight:500;border-bottom:1px solid #eee;white-space:nowrap;}
+td{padding:8px;border-bottom:1px solid #f0f0ee;font-size:13px;}
+td input{width:100%;border:1px solid transparent;background:transparent;padding:4px 6px;border-radius:4px;font-size:13px;transition:all .15s;}
+td input:focus{outline:none;border-color:#2563EB;background:#f8fbfe;}
+td input::-webkit-outer-spin-button,td input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0;}
+td input[type=number]{-moz-appearance:textfield;}
+tr:hover td{background:#fafaf8;}
+.platform-row td:first-child{font-weight:500;}
+.plat-tmall{color:#FF5722;}
+.plat-jd{color:#2563EB;}
+.plat-tmall-super{color:#059669;}
+.plat-douyin1{color:#7C3AED;}
+.plat-douyin2{color:#F59E0B;}
+.plat-pdd{color:#DC2626;}
+.section-title{font-size:16px;font-weight:600;margin:24px 0 12px;}
+.section-subtitle{font-size:13px;color:#888780;margin-bottom:12px;}
+.empty-state{text-align:center;padding:40px;color:#888780;font-size:14px;}
+/* Settings */
+.settings-panel{background:#fff;border-radius:8px;padding:24px;border:1px solid #eee;max-width:600px;}
+.setting-row{display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid #f0f0ee;}
+.setting-row:last-child{border-bottom:none;}
+.setting-label{font-size:14px;}
+.setting-desc{font-size:12px;color:#888780;}
+/* Toast */
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#2c2c2a;color:#fff;padding:10px 24px;border-radius:8px;font-size:13px;z-index:999;opacity:0;transition:opacity .3s;pointer-events:none;}
+.toast.show{opacity:1;}
+/* Responsive */
+@media(max-width:1024px){.kpi-grid{grid-template-columns:repeat(3,1fr);}.chart-row-top{grid-template-columns:1fr;}.chart-grid{grid-template-columns:1fr;}}
+@media(max-width:640px){.kpi-grid{grid-template-columns:1fr;}}
+@media(max-width:640px){.content{padding:12px;}.header{padding:10px 16px;}.tabs{padding:0 16px;}}
+.help-tip{font-size:12px;color:#888780;margin-top:4px;}
+.summary-table{width:100%;border-collapse:collapse;background:#fff;margin-top:8px;}
+.summary-table th{background:#f8f8f6;padding:8px;text-align:center;font-size:11px;color:#888780;}
+.summary-table td{padding:8px;text-align:center;font-size:12px;border-bottom:1px solid #f0f0ee;}
+.summary-table td:first-child{text-align:left;font-weight:500;}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>多平台电商数据看板</h1>
+  <div class="header-right">
+    <span id="dataModeBadge" style="font-size:12px;color:#888780;background:#f5f5f3;padding:2px 8px;border-radius:4px;">本地数据</span>
+  </div>
+</div>
+
+<div class="tabs">
+  <div class="tab active" data-tab="dashboard">数据看板</div>
+  <div class="tab" data-tab="entry">数据录入</div>
+  <div class="tab" data-tab="settings">设置 & 帮助</div>
+</div>
+
+<!-- ============ Tab 1: Dashboard ============ -->
+<div class="content tab-content" id="tab-dashboard">
+  <div class="toolbar">
+    <div class="toolbar-left">
+      <label style="font-size:13px;color:#888780;">日期范围：</label>
+      <input type="date" class="date-input" id="dateFrom">
+      <span style="color:#888780;">~</span>
+      <input type="date" class="date-input" id="dateTo">
+      <div class="quick-range">
+        <button onclick="quickRange(7)">近7天</button>
+        <button onclick="quickRange(15)">近15天</button>
+        <button onclick="quickRange(30)">近30天</button>
+      </div>
+      <div class="compare-toggle" id="compareToggle">
+        <button class="active" id="cmpMom" onclick="setCompareMode('mom')">环比</button>
+        <button id="cmpYoy" onclick="setCompareMode('yoy')">同比</button>
+      </div>
+      <span class="plat-filter-all" onclick="toggleAllPlatforms()">全选</span>
+      <span class="plat-filter" id="platFilter"></span>
+      <button class="btn primary" onclick="refreshDashboard()">刷新看板</button>
+    </div>
+  </div>
+
+  <div class="kpi-grid" id="kpiGrid">
+    <div class="kpi-card">
+      <div class="kpi-left">
+        <div class="kpi-label">全渠道 GMV</div>
+        <div class="kpi-value" id="kpiGmv">--</div>
+      </div>
+      <div class="kpi-right">
+        <span class="kpi-delta-label" id="kpiGmvDeltaLabel">环比</span>
+        <div class="kpi-delta neutral" id="kpiGmvDelta">--</div>
+      </div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-left">
+        <div class="kpi-label">去退GMV</div>
+        <div class="kpi-value" id="kpiNetGmv">--</div>
+      </div>
+      <div class="kpi-right">
+        <span class="kpi-delta-label" id="kpiNetGmvDeltaLabel">环比</span>
+        <div class="kpi-delta neutral" id="kpiNetGmvDelta">--</div>
+      </div>
+    </div>
+    <div class="kpi-card" id="kpiTotalAchieveCard">
+      <div class="kpi-left">
+        <div class="kpi-label">全渠道目标达成率</div>
+        <div class="kpi-value" id="kpiTotalAchieveRate">--</div>
+        <div class="kpi-sub" id="kpiTotalAchieveDetail"></div>
+      </div>
+    </div>
+    <div class="kpi-card" id="kpiTopCard">
+      <div class="kpi-left">
+        <div class="kpi-label">去退GMV Top1 平台</div>
+        <div class="kpi-value" id="kpiTopPlatform">--</div>
+        <div class="kpi-sub" id="kpiTopShare"></div>
+      </div>
+    </div>
+    <div class="kpi-card" id="kpiGrowthCard">
+      <div class="kpi-left">
+        <div class="kpi-label" id="kpiGrowthLabel">环比增长率最高平台</div>
+        <div class="kpi-value" id="kpiGrowthPlatform">--</div>
+        <div class="kpi-sub" id="kpiGrowthRate"></div>
+      </div>
+    </div>
+    <div class="kpi-card" id="kpiAchieveCard">
+      <div class="kpi-left">
+        <div class="kpi-label">达成率最高平台</div>
+        <div class="kpi-value" id="kpiAchievePlatform">--</div>
+        <div class="kpi-sub" id="kpiAchieveRate"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="chart-row-top">
+    <div class="chart-card">
+      <div class="chart-title">去退GMV 趋势 - 各平台对比<span class="compare-tag" id="cmpTagGmv"></span></div>
+      <div class="legend-row" id="legendGmv"></div>
+      <div class="chart-wrap"><canvas id="chartGmv" role="img" aria-label="GMV趋势折线图">GMV趋势折线图</canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">去退GMV 平台占比<span class="compare-tag" id="cmpTagShare"></span></div>
+      <div class="share-layout">
+        <div class="legend-col" id="legendShare"></div>
+        <div class="chart-wrap"><canvas id="chartShare" role="img" aria-label="GMV平台占比饼图">GMV平台占比饼图</canvas></div>
+      </div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">月至今达成率 <span style="font-size:11px;color:#888780;font-weight:400;" id="achieveTitle"></span></div>
+      <div class="chart-wrap"><canvas id="chartAchieve" role="img" aria-label="月至今达成率对比">月至今达成率对比</canvas></div>
+    </div>
+  </div>
+
+  <div class="chart-grid">
+    <div class="chart-card">
+      <div class="chart-title">推广费用 & ROI - 各平台对比<span class="compare-tag" id="cmpTagAdRoi"></span></div>
+      <div class="legend-row" id="legendAdRoi"></div>
+      <div class="chart-wrap"><canvas id="chartAdRoi" role="img" aria-label="推广费用与ROI对比">推广费用与ROI对比</canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">流量 & 转化率 - 平台对比<span class="compare-tag" id="cmpTagTraffic"></span></div>
+      <div class="legend-row" id="legendTraffic"></div>
+      <div class="chart-wrap"><canvas id="chartTraffic" role="img" aria-label="流量与转化率对比">流量与转化率对比</canvas></div>
+    </div>
+  </div>
+
+  <div class="chart-card full" style="padding:14px 16px;">
+    <div class="chart-title">平台维度汇总表</div>
+    <table class="summary-table" id="summaryTable">
+      <thead>
+        <tr>
+          <th>平台</th><th>GMV(¥)</th><th>去退GMV(¥)</th><th>订单量</th><th>客单价</th>
+          <th>访客UV</th><th>转化率</th><th>新客数</th><th>新客占比</th><th>推广费(¥)</th><th>ROI</th><th>费效比</th>
+        </tr>
+      </thead>
+      <tbody id="summaryBody"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ============ Tab 2: Data Entry ============ -->
+<div class="content tab-content" id="tab-entry" style="display:none;">
+  <div class="toolbar">
+    <div class="toolbar-left">
+      <label style="font-size:13px;color:#888780;">录入日期：</label>
+      <input type="date" class="date-input" id="entryDate">
+      <button class="btn" onclick="loadEntryData()">加载该日数据</button>
+    </div>
+    <div class="toolbar-right">
+      <button class="btn primary" onclick="saveEntryData()">保存当日数据</button>
+      <button class="btn" onclick="exportCSV()">导出CSV备份</button>
+      <label class="btn" style="display:inline-block;cursor:pointer;">导入CSV
+        <input type="file" accept=".csv" style="display:none;" onchange="importCSV(event)">
+      </label>
+      <button class="btn danger" onclick="clearAllData()">清空全部数据</button>
+    </div>
+  </div>
+
+  <div class="section-subtitle">
+    在下方表格中输入各平台当日数据，灰色的"派生指标"列会自动计算，无需手动填写。填写完成后点击"保存当日数据"。
+  </div>
+
+  <table id="entryTable">
+    <thead>
+      <tr>
+        <th style="width:120px;">平台</th>
+        <th>GMV (¥)</th>
+        <th>退款金额 (¥)</th>
+        <th>订单量</th>
+        <th>访客 UV</th>
+        <th>浏览 PV</th>
+        <th>新客数</th>
+        <th>推广费用 (¥)</th>
+        <th style="background:#f0f0ee;color:#aaa;">客单价(自动)</th>
+        <th style="background:#f0f0ee;color:#aaa;">转化率(自动)</th>
+        <th style="background:#f0f0ee;color:#aaa;">新客占比(自动)</th>
+        <th style="background:#f0f0ee;color:#aaa;">ROI(自动)</th>
+      </tr>
+    </thead>
+    <tbody id="entryBody"></tbody>
+  </table>
+
+  <div style="margin-top:16px;padding:16px;background:#fff;border-radius:8px;border:1px solid #eee;font-size:13px;color:#888780;">
+    <strong style="color:#2c2c2a;">指标说明：</strong><br>
+    去退GMV = GMV - 退款金额<br>
+    客单价 = GMV / 订单量<br>
+    转化率 = 订单量 / 访客UV x 100%<br>
+    新客占比 = 新客数 / 订单量 x 100%<br>
+    ROI = 去退GMV / 推广费用（衡量推广投入产出比，ROI越高代表推广效率越好）<br>
+    费效比 = 推广费用 / 去退GMV x 100%（费效比越低代表推广成本占比越低）
+  </div>
+
+  <div class="section-title">已录入数据记录</div>
+  <table id="historyTable">
+    <thead>
+      <tr><th>日期</th><th>天猫旗舰店</th><th>京东自营</th><th>天猫超市</th><th>抖音1店</th><th>抖音2店</th><th>拼多多专营店</th><th>全渠道GMV</th><th>全渠道推广费</th><th>操作</th></tr>
+    </thead>
+    <tbody id="historyBody"></tbody>
+  </table>
+</div>
+
+<!-- ============ Tab 3: Settings ============ -->
+<div class="content tab-content" id="tab-settings" style="display:none;">
+  <div class="section-title">使用说明</div>
+  <div class="settings-panel">
+    <div class="setting-row">
+      <div>
+        <div class="setting-label">1. 每日录入流程</div>
+        <div class="setting-desc">切换到"数据录入"页 -> 选择日期 -> 填写6个平台数据 -> 点击"保存当日数据"</div>
+      </div>
+    </div>
+    <div class="setting-row">
+      <div>
+        <div class="setting-label">2. 查看看板</div>
+        <div class="setting-desc">切换到"数据看板"页 -> 选择日期范围 -> 点击"刷新看板" -> 图表自动更新</div>
+      </div>
+    </div>
+    <div class="setting-row">
+      <div>
+        <div class="setting-label">3. 数据备份与迁移</div>
+        <div class="setting-desc">在"数据录入"页点击"导出CSV"可下载全部数据；换电脑时用"导入CSV"恢复</div>
+      </div>
+    </div>
+    <div class="setting-row">
+      <div>
+        <div class="setting-label">4. 数据存储位置</div>
+        <div class="setting-desc">数据存储在浏览器 localStorage 中，清除浏览器缓存会导致数据丢失，请定期导出备份</div>
+      </div>
+    </div>
+    <div class="setting-row">
+      <div>
+        <div class="setting-label">5. 多人协作方案</div>
+        <div class="setting-desc">数据源自动从腾讯文档读取，生成 data.json 随看板一起部署到云端。团队成员打开链接即可查看最新数据，无需各自导入</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-title">数据云端共享</div>
+  <div class="settings-panel">
+    <div class="setting-desc" style="margin-bottom:12px;">数据来源于腾讯文档 <a href="https://docs.qq.com/sheet/DZHJsZXZubnNLeU9w" target="_blank" style="color:#2563EB;">Y26 电商看板数据源</a>，每次部署时自动同步最新数据。如需更新数据，编辑腾讯文档后告知 AI 助手重新部署即可。</div>
+    <button class="btn primary" onclick="exportSharedData()" style="margin-bottom:8px;">导出本地数据 (data.json)</button>
+    <div class="setting-desc" style="color:#aaa;">云端数据为只读模式，如需本地离线使用，可导出并手动导入</div>
+  </div>
+
+  <div class="section-title">指标口径定义</div>
+  <div class="settings-panel">
+    <div class="setting-row"><div><div class="setting-label">GMV</div><div class="setting-desc">消费者已支付订单金额（含运费，不含退款）</div></div></div>
+    <div class="setting-row"><div><div class="setting-label">去退GMV</div><div class="setting-desc">GMV - 退款金额，看板中所有 GMV 相关指标均以此口径计算</div></div></div>
+    <div class="setting-row"><div><div class="setting-label">订单量</div><div class="setting-desc">已支付的订单总数（含退款订单）</div></div></div>
+    <div class="setting-row"><div><div class="setting-label">访客 UV</div><div class="setting-desc">去重后的独立访客数，取各平台官方后台数据</div></div></div>
+    <div class="setting-row"><div><div class="setting-label">新客数</div><div class="setting-desc">当日首次在本平台下单的用户数</div></div></div>
+    <div class="setting-row"><div><div class="setting-label">推广费用</div><div class="setting-desc">当日花费的付费推广费用（直通车/引力魔方/千川/多多搜索等）</div></div></div>
+    <div class="setting-row"><div><div class="setting-label">ROI</div><div class="setting-desc">去退GMV / 推广费用。衡量推广投入产出比，ROI越高代表推广效率越好</div></div></div>
+    <div class="setting-row"><div><div class="setting-label">费效比</div><div class="setting-desc">推广费用 / 去退GMV x 100%。费效比越低代表推广成本占比越低</div></div></div>
+    <div class="setting-row"><div><div class="setting-label">周期环比</div><div class="setting-desc">N天的汇总数据对比前N天，选1天即单日环比，选7天即周度环比</div></div></div>
+  </div>
+
+  <div class="section-title">月度目标设置</div>
+  <div class="settings-panel" style="max-width:100%;">
+    <div class="setting-desc" style="margin-bottom:12px;">设置每月各平台的去退GMV目标，用于计算月至今达成率。月至今定义为上月27日至昨日（今日数据通常未完整）。</div>
+    <div style="margin-bottom:12px;display:flex;gap:8px;align-items:center;">
+      <label style="font-size:13px;">目标月份：</label>
+      <input type="month" class="date-input" id="targetMonth" style="width:160px;">
+      <button class="btn" onclick="loadTargetsUI()">加载</button>
+      <button class="btn primary" onclick="saveTargetsUI()">保存目标</button>
+    </div>
+    <table class="summary-table" style="margin-top:0;">
+      <thead>
+        <tr><th>平台</th><th>去退GMV目标 (¥)</th><th style="width:80px;">状态</th></tr>
+      </thead>
+      <tbody id="targetsBody"></tbody>
+    </table>
+    <div id="targetsList" style="margin-top:16px;font-size:12px;color:#888780;"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+var PLATFORMS = [
+  {key:'tmall',name:'天猫旗舰店',cls:'plat-tmall',color:'#FF5722'},
+  {key:'jd',name:'京东自营',cls:'plat-jd',color:'#2563EB'},
+  {key:'tmall_super',name:'天猫超市',cls:'plat-tmall-super',color:'#059669'},
+  {key:'douyin1',name:'抖音1店',cls:'plat-douyin1',color:'#7C3AED'},
+  {key:'douyin2',name:'抖音2店',cls:'plat-douyin2',color:'#F59E0B'},
+  {key:'pdd',name:'拼多多专营店',cls:'plat-pdd',color:'#DC2626'}
+];
+var STORAGE_KEY = 'ecom_dashboard_data_v2';
+var TARGETS_KEY = 'ecom_dashboard_targets_v1';
+var charts = {};
+var cloudData = null; /* Cloud-fetched data from data.json (entries) */
+var cloudTargets = null; /* Cloud-fetched targets from data.json */
+var isCloudMode = false; /* True when viewing shared cloud data */
+var compareMode = 'mom'; /* 'mom' = 环比 (period-over-period), 'yoy' = 同比 (year-over-year) */
+
+function getCompareModeText(){
+  return compareMode==='yoy'?'同比':'环比';
+}
+
+function setCompareMode(mode){
+  compareMode=mode;
+  document.getElementById('cmpMom').classList.toggle('active',mode==='mom');
+  document.getElementById('cmpYoy').classList.toggle('active',mode==='yoy');
+  refreshDashboard();
+}
+
+function getData(){
+  if(cloudData)return cloudData;
+  try{return JSON.parse(localStorage.getItem(STORAGE_KEY))||{};}catch(e){return{};}
+}
+function saveData(d){
+  if(isCloudMode)return; /* Read-only in cloud mode */
+  localStorage.setItem(STORAGE_KEY,JSON.stringify(d));
+}
+function formatDate(d){if(!d)return'';var dt=new Date(d);var y=dt.getFullYear();var m=String(dt.getMonth()+1).padStart(2,'0');var day=String(dt.getDate()).padStart(2,'0');return y+'-'+m+'-'+day;}
+function todayStr(){return formatDate(new Date());}
+function fmtMoney(v){if(isNaN(v)||v===null)return'--';if(v>=10000)return'\u00a5'+(v/10000).toFixed(1)+'\u4e07';return'\u00a5'+Math.round(v).toLocaleString();}
+function fmtNum(v){if(isNaN(v)||v===null)return'--';if(v>=10000)return(v/10000).toFixed(1)+'\u4e07';return Math.round(v).toLocaleString();}
+function fmtPct(v){if(isNaN(v)||v===null)return'--';return v.toFixed(1)+'%';}
+function shortDate(dtStr){if(!dtStr)return'';var p=dtStr.split('-');return(p[1]||'')+'-'+(p[2]||'');}
+
+/* Fetch shared data from data.json (cloud mode) */
+function fetchCloudData(callback){
+  fetch('data.json?_t='+Date.now())
+    .then(function(r){
+      if(!r.ok)throw new Error('not found');
+      return r.json();
+    })
+    .then(function(d){
+      /* Support nested format {_meta, entries} or flat format */
+      var entries = d.entries || d;
+      var hasData=false;
+      for(var k in entries){hasData=true;break;}
+      if(hasData){
+        cloudData=entries;
+        /* Also load targets from cloud data */
+        if(d.targets){
+          cloudTargets=d.targets;
+          /* Save to localStorage as fallback cache */
+          try{localStorage.setItem(TARGETS_KEY,JSON.stringify(d.targets));}catch(e){}
+        }
+        isCloudMode=true;
+        /* Update UI for cloud mode */
+        var badge=document.getElementById('dataModeBadge');
+        if(badge){
+          badge.textContent='腾讯文档自动同步';
+          badge.style.background='#d1fae5';
+          badge.style.color='#059669';
+        }
+        /* Hide data entry tab in cloud mode */
+        var entryTab=document.querySelector('.tab[data-tab="entry"]');
+        if(entryTab)entryTab.style.display='none';
+      }
+      if(callback)callback();
+    })
+    .catch(function(e){
+      /* No data.json found, use localStorage */
+      if(callback)callback();
+    });
+}
+
+/* Export current data as data.json for cloud sharing */
+function exportSharedData(){
+  var data=getData();
+  var hasData=false;
+  for(var k in data){hasData=true;break;}
+  if(!hasData){showToast('当前无数据可导出');return;}
+  var json=JSON.stringify(data,null,2);
+  var blob=new Blob([json],{type:'application/json'});
+  var url=URL.createObjectURL(blob);
+  var a=document.createElement('a');
+  a.href=url;
+  a.download='data.json';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  showToast('数据已导出为 data.json，可随看板一起部署到云端共享');
+}
+
+function switchTab(name){
+  if(name==='entry'&&isCloudMode){showToast('云端数据为只读模式，不可录入');return;}
+  document.querySelectorAll('.tab').forEach(function(t){t.classList.toggle('active',t.dataset.tab===name);});
+  document.querySelectorAll('.tab-content').forEach(function(c){c.style.display=c.id==='tab-'+name?'block':'none';});
+  if(name==='dashboard')refreshDashboard();
+  if(name==='entry'){var dt=document.getElementById('entryDate').value||todayStr();document.getElementById('entryDate').value=dt;loadEntryData();loadHistory();}
+  if(name==='settings'){document.getElementById('targetMonth').value=getTargetMonthKey();loadTargetsUI();}
+}
+document.querySelectorAll('.tab').forEach(function(t){t.onclick=function(){switchTab(t.dataset.tab);};});
+
+function showToast(msg){var t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(function(){t.classList.remove('show');},2000);}
+
+function initEntryTable(){
+  var tbody=document.getElementById('entryBody');
+  tbody.innerHTML='';
+  PLATFORMS.forEach(function(p){
+    var tr=document.createElement('tr');
+    tr.className='platform-row';
+    tr.innerHTML='<td class="'+p.cls+'">'+p.name+'</td>'+
+      '<td><input type="number" id="gmv_'+p.key+'" placeholder="0" oninput="calcRow(\''+p.key+'\')"></td>'+
+      '<td><input type="number" id="refund_'+p.key+'" placeholder="0" oninput="calcRow(\''+p.key+'\')"></td>'+
+      '<td><input type="number" id="orders_'+p.key+'" placeholder="0" oninput="calcRow(\''+p.key+'\')"></td>'+
+      '<td><input type="number" id="uv_'+p.key+'" placeholder="0" oninput="calcRow(\''+p.key+'\')"></td>'+
+      '<td><input type="number" id="pv_'+p.key+'" placeholder="0"></td>'+
+      '<td><input type="number" id="newcust_'+p.key+'" placeholder="0" oninput="calcRow(\''+p.key+'\')"></td>'+
+      '<td><input type="number" id="adcost_'+p.key+'" placeholder="0" oninput="calcRow(\''+p.key+'\')"></td>'+
+      '<td style="background:#f8f8f6;color:#aaa;" id="aov_'+p.key+'">--</td>'+
+      '<td style="background:#f8f8f6;color:#aaa;" id="cvr_'+p.key+'">--</td>'+
+      '<td style="background:#f8f8f6;color:#aaa;" id="newpct_'+p.key+'">--</td>'+
+      '<td style="background:#f8f8f6;color:#aaa;" id="roi_'+p.key+'">--</td>';
+    tbody.appendChild(tr);
+  });
+}
+
+function calcRow(key){
+  var gmv=parseFloat(document.getElementById('gmv_'+key).value)||0;
+  var orders=parseFloat(document.getElementById('orders_'+key).value)||0;
+  var uv=parseFloat(document.getElementById('uv_'+key).value)||0;
+  var newcust=parseFloat(document.getElementById('newcust_'+key).value)||0;
+  var adcost=parseFloat(document.getElementById('adcost_'+key).value)||0;
+  document.getElementById('aov_'+key).textContent=orders>0?'\u00a5'+Math.round(gmv/orders):'--';
+  document.getElementById('cvr_'+key).textContent=uv>0?((orders/uv)*100).toFixed(1)+'%':'--';
+  document.getElementById('newpct_'+key).textContent=orders>0?((newcust/orders)*100).toFixed(1)+'%':'--';
+  document.getElementById('roi_'+key).textContent=adcost>0?(gmv/adcost).toFixed(1):'--';
+}
+
+function saveEntryData(){
+  var dt=document.getElementById('entryDate').value;
+  if(!dt){showToast('请先选择日期');return;}
+  var data=getData();
+  if(!data[dt])data[dt]={};
+  PLATFORMS.forEach(function(p){
+    data[dt][p.key]={
+      gmv:parseFloat(document.getElementById('gmv_'+p.key).value)||0,
+      refund:parseFloat(document.getElementById('refund_'+p.key).value)||0,
+      orders:parseFloat(document.getElementById('orders_'+p.key).value)||0,
+      uv:parseFloat(document.getElementById('uv_'+p.key).value)||0,
+      pv:parseFloat(document.getElementById('pv_'+p.key).value)||0,
+      newcust:parseFloat(document.getElementById('newcust_'+p.key).value)||0,
+      adcost:parseFloat(document.getElementById('adcost_'+p.key).value)||0
+    };
+  });
+  saveData(data);
+  showToast(dt+' 数据已保存');
+  loadHistory();
+}
+
+function loadEntryData(){
+  var dt=document.getElementById('entryDate').value;
+  if(!dt)return;
+  var data=getData();
+  var dayData=data[dt]||{};
+  PLATFORMS.forEach(function(p){
+    var d=dayData[p.key]||{};
+    document.getElementById('gmv_'+p.key).value=d.gmv||'';
+    document.getElementById('refund_'+p.key).value=d.refund||'';
+    document.getElementById('orders_'+p.key).value=d.orders||'';
+    document.getElementById('uv_'+p.key).value=d.uv||'';
+    document.getElementById('pv_'+p.key).value=d.pv||'';
+    document.getElementById('newcust_'+p.key).value=d.newcust||'';
+    document.getElementById('adcost_'+p.key).value=d.adcost||'';
+    calcRow(p.key);
+  });
+}
+
+function loadHistory(){
+  var data=getData();
+  var dates=Object.keys(data).sort().reverse();
+  var tbody=document.getElementById('historyBody');
+  tbody.innerHTML='';
+  if(dates.length===0){tbody.innerHTML='<tr><td colspan="10" style="text-align:center;padding:24px;color:#888780;">暂无录入数据</td></tr>';return;}
+  dates.slice(0,30).forEach(function(dt){
+    var dayData=data[dt]||{};
+    var totalGmv=0;
+    var totalAdcost=0;
+    var cells='';
+    PLATFORMS.forEach(function(p){
+      var d=dayData[p.key]||{};
+      var gmv=d.gmv||0;
+      totalGmv+=gmv;
+      totalAdcost+=(d.adcost||0);
+      cells+='<td>'+(gmv>0?'\u00a5'+gmv.toLocaleString():'-')+'</td>';
+    });
+    tbody.innerHTML+='<tr><td style="font-weight:500;">'+dt+'</td>'+cells+'<td style="font-weight:500;">\u00a5'+totalGmv.toLocaleString()+'</td><td style="font-weight:500;color:#BA7517;">\u00a5'+totalAdcost.toLocaleString()+'</td><td><button class="btn" style="padding:4px 10px;font-size:12px;" onclick="document.getElementById(\'entryDate\').value=\''+dt+'\';loadEntryData();window.scrollTo(0,0);">编辑</button> <button class="btn danger" style="padding:4px 10px;font-size:12px;" onclick="deleteDay(\''+dt+'\')">删除</button></td></tr>';
+  });
+}
+
+function deleteDay(dt){
+  if(!confirm('确认删除 '+dt+' 的数据？'))return;
+  var data=getData();
+  delete data[dt];
+  saveData(data);
+  showToast(dt+' 数据已删除');
+  loadHistory();
+}
+
+function clearAllData(){
+  if(!confirm('确认清空全部数据？此操作不可恢复！建议先导出备份。'))return;
+  if(!confirm('再次确认：这将删除所有已录入的数据！'))return;
+  localStorage.removeItem(STORAGE_KEY);
+  showToast('全部数据已清空');
+  initEntryTable();
+  loadHistory();
+}
+
+function exportCSV(){
+  var data=getData();
+  var rows=[['date','platform','gmv','refund','orders','uv','pv','newcust','adcost']];
+  Object.keys(data).sort().forEach(function(dt){
+    PLATFORMS.forEach(function(p){
+      var d=data[dt][p.key]||{};
+      rows.push([dt,p.name,d.gmv||0,d.refund||0,d.orders||0,d.uv||0,d.pv||0,d.newcust||0,d.adcost||0]);
+    });
+  });
+  var csv='\uFEFF'+rows.map(function(r){return r.join(',');}).join('\n');
+  var blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
+  var link=document.createElement('a');
+  link.href=URL.createObjectURL(blob);
+  link.download='电商数据备份_'+todayStr()+'.csv';
+  link.click();
+  showToast('CSV已导出');
+}
+
+function cleanNum(s){var t=String(s||'').replace(/[¥￥,\s]/g,'');return parseFloat(t)||0;}
+function normalizeDate(raw){
+  /* Auto-detect and convert various date formats to YYYY-MM-DD */
+  if(!raw)return'';
+  var s=String(raw).trim();
+  /* Already YYYY-MM-DD */
+  if(/^\d{4}-\d{2}-\d{2}$/.test(s))return s;
+  /* YYYY/MM/DD or YYYY/MM/DD (with single-digit month/day) */
+  var m=s.match(/^(\d{4})[\/\-\.](\d{1,2})[\/\-\.](\d{1,2})$/);
+  if(m)return m[1]+'-'+m[2].padStart(2,'0')+'-'+m[3].padStart(2,'0');
+  /* MM/DD/YYYY or DD/MM/YYYY — heuristic: if first part > 12, it's DD/MM/YYYY */
+  var m2=s.match(/^(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{4})$/);
+  if(m2){
+    var a=parseInt(m2[1],10),b=parseInt(m2[2],10),y=m2[3];
+    if(a>12)return y+'-'+b.toString().padStart(2,'0')+'-'+a.toString().padStart(2,'0');
+    return y+'-'+a.toString().padStart(2,'0')+'-'+b.toString().padStart(2,'0');
+  }
+  /* YYYYMMDD (8 digits) */
+  if(/^\d{8}$/.test(s))return s.slice(0,4)+'-'+s.slice(4,6)+'-'+s.slice(6,8);
+  /* YYYY年M月D日 / YYYY年MM月DD日 */
+  var m3=s.match(/^(\d{4})年(\d{1,2})月(\d{1,2})日?$/);
+  if(m3)return m3[1]+'-'+m3[2].padStart(2,'0')+'-'+m3[3].padStart(2,'0');
+  /* Mon DD, YYYY or DD Mon YYYY */
+  var months={jan:'01',feb:'02',mar:'03',apr:'04',may:'05',jun:'06',jul:'07',aug:'08',sep:'09',oct:'10',nov:'11',dec:'12',
+    '1月':'01','2月':'02','3月':'03','4月':'04','5月':'05','6月':'06','7月':'07','8月':'08','9月':'09','10月':'10','11月':'11','12月':'12'};
+  var m4=s.match(/^(\d{1,2})\s+([a-z]{3,9})\s*,?\s*(\d{4})$/i);
+  if(m4&&months[m4[2].toLowerCase()])return m4[3]+'-'+months[m4[2].toLowerCase()]+'-'+m4[1].padStart(2,'0');
+  var m5=s.match(/^([a-z]{3,9})\s+(\d{1,2}),?\s*(\d{4})$/i);
+  if(m5&&months[m5[1].toLowerCase()])return m5[3]+'-'+months[m5[1].toLowerCase()]+'-'+m5[2].padStart(2,'0');
+  /* MM.DD.YYYY or DD.MM.YYYY (German dot format) */
+  var m6=s.match(/^(\d{1,2})\.(\d{1,2})\.(\d{4})$/);
+  if(m6){var a6=parseInt(m6[1],10),b6=parseInt(m6[2],10);if(a6>12)return m6[3]+'-'+b6.toString().padStart(2,'0')+'-'+a6.toString().padStart(2,'0');return m6[3]+'-'+a6.toString().padStart(2,'0')+'-'+b6.toString().padStart(2,'0');}
+  return'';
+}
+function CSVParseLine(line){
+  /* Proper CSV parsing: respects quoted fields that may contain commas */
+  var result=[];var current='';var inQuotes=false;
+  for(var i=0;i<line.length;i++){
+    var ch=line[i];
+    if(ch==='"'){inQuotes=!inQuotes;}
+    else if(ch===','&&!inQuotes){result.push(current.replace(/^"|"$/g,''));current='';}
+    else{current+=ch;}
+  }
+  result.push(current.replace(/^"|"$/g,''));
+  return result;
+}
+
+function importCSV(event){
+  var file=event.target.files[0];
+  if(!file)return;
+  var reader=new FileReader();
+  reader.onload=function(e){
+    try{
+      /* --- Phase 1: Parse CSV --- */
+      var text=e.target.result;
+      if(!text||text.length<5){showToast('导入失败：文件为空或过小');return;}
+      text=text.replace(/^\uFEFF/,'').replace(/\r\n/g,'\n').replace(/\r/g,'\n');
+      var lines=text.split('\n').filter(function(l){return l.trim();});
+      if(lines.length<2){showToast('导入失败：CSV只有标题行，无数据');return;}
+      var headerVals=CSVParseLine(lines[0]);
+      if(headerVals.length<9){showToast('导入失败：CSV列数不足（需要至少9列：date,platform,gmv,refund,orders,uv,pv,newcust,adcost），实际只有'+headerVals.length+'列');return;}
+
+      var existingData=getData();
+      var rows=[];  /* {dt, platKey, originalDt, row ...} */
+      var skipped=0,parseErrors=0,dateErrors=0;
+      for(var i=1;i<lines.length;i++){
+        try{
+          var vals=CSVParseLine(lines[i]);
+          if(vals.length<9){parseErrors++;continue;}
+          var rawDt=(vals[0]||'').trim();
+          var platName=(vals[1]||'').trim();
+          var dt=normalizeDate(rawDt);
+          if(!dt){dateErrors++;continue;}
+          var plat=PLATFORMS.find(function(p){return p.name===platName;});
+          if(!plat){skipped++;continue;}
+          rows.push({
+            dt:dt,originalDt:rawDt,platKey:plat.key,platName:plat.name,
+            gmv:cleanNum(vals[2]),refund:cleanNum(vals[3]),orders:cleanNum(vals[4]),
+            uv:cleanNum(vals[5]),pv:cleanNum(vals[6]),newcust:cleanNum(vals[7]),adcost:cleanNum(vals[8])
+          });
+        }catch(rowErr){parseErrors++;}
+      }
+      if(rows.length===0){
+        var reason='导入失败：无有效数据。';
+        if(skipped>0)reason+=' '+skipped+' 条平台名不匹配。';
+        if(dateErrors>0)reason+=' '+dateErrors+' 条日期无法识别。';
+        if(parseErrors>0)reason+=' '+parseErrors+' 条解析出错。';
+        reason+=' 平台名需为：'+PLATFORMS.map(function(p){return p.name;}).join('、');
+        showToast(reason);
+        return;
+      }
+
+      /* --- Phase 2: Check for duplicates --- */
+      var dupDetails=[];
+      rows.forEach(function(r){
+        if(existingData[r.dt]&&existingData[r.dt][r.platKey]!==undefined){
+          dupDetails.push(r.dt+' '+r.platName+(r.originalDt!==r.dt?'（原始日期：'+r.originalDt+'）':''));
+        }
+      });
+      if(dupDetails.length>0){
+        var dupCount=dupDetails.length;
+        var dupPreview=dupDetails.slice(0,5).join('\n• ');
+        var moreText=dupCount>5?'\n... 等共 '+dupCount+' 条':'';
+        var msgText='检测到 '+dupCount+' 条重复数据（相同日期+平台已存在）：\n\n• '+dupPreview+moreText+'\n\n请选择处理方式：';
+        showDupDialog(msgText,dupDetails,rows,existingData,function(action){
+          executeImport(action,rows,existingData);
+        });
+        return;
+      }
+
+      /* No duplicates — import directly */
+      executeImport('overwrite',rows,existingData);
+    }catch(err){showToast('导入失败：文件解析异常，请确认文件为UTF-8编码的标准CSV格式');}
+  };
+  reader.readAsText(file,'UTF-8');
+  event.target.value='';
+}
+
+function showDupDialog(msg,dupDetails,rows,existingData,callback){
+  /* Build a simple in-page modal for duplicate handling */
+  var overlay=document.createElement('div');
+  overlay.id='dupOverlay';
+  overlay.style.cssText='position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.4);z-index:1000;display:flex;align-items:center;justify-content:center;';
+  var box=document.createElement('div');
+  box.style.cssText='background:#fff;border-radius:12px;padding:24px;max-width:520px;width:90%;box-shadow:0 8px 32px rgba(0,0,0,0.18);font-size:14px;line-height:1.8;';
+  box.innerHTML='<div style="font-size:16px;font-weight:600;margin-bottom:12px;">⚠️ 重复数据提醒</div>'+
+    '<div style="color:#555;white-space:pre-wrap;margin-bottom:20px;max-height:200px;overflow-y:auto;">'+msg.replace(/\n/g,'<br>')+'</div>'+
+    '<div style="display:flex;gap:10px;justify-content:flex-end;">'+
+      '<button id="dupSkip" style="padding:8px 18px;border:1px solid #ddd;border-radius:6px;background:#f5f5f3;cursor:pointer;font-size:13px;">跳过重复，只导入新数据</button>'+
+      '<button id="dupOverwrite" style="padding:8px 18px;border:1px solid #ddd;border-radius:6px;background:#fff;cursor:pointer;font-size:13px;">覆盖已有数据</button>'+
+      '<button id="dupClear" style="padding:8px 18px;border:none;border-radius:6px;background:#DC2626;color:#fff;cursor:pointer;font-size:13px;">清空全部后导入</button>'+
+      '<button id="dupCancel" style="padding:8px 18px;border:1px solid #ddd;border-radius:6px;background:#fff;cursor:pointer;font-size:13px;">取消</button>'+
+    '</div>';
+  overlay.appendChild(box);
+  document.body.appendChild(overlay);
+
+  document.getElementById('dupSkip').onclick=function(){closeDialog();callback('skip');};
+  document.getElementById('dupOverwrite').onclick=function(){closeDialog();callback('overwrite');};
+  document.getElementById('dupClear').onclick=function(){closeDialog();callback('clear');};
+  document.getElementById('dupCancel').onclick=function(){closeDialog();callback('cancel');};
+
+  function closeDialog(){
+    try{document.body.removeChild(overlay);}catch(e){}
+  }
+}
+
+function executeImport(action,rows,existingData){
+  if(action==='cancel'){showToast('已取消导入');return;}
+  var data;
+  if(action==='clear'){
+    data={};
+    showToast('已有数据已清空，正在导入新数据...');
+  }else{
+    data=JSON.parse(JSON.stringify(existingData)); /* deep copy */
+  }
+
+  var imported=0,overwritten=0;
+  var minDt='',maxDt='';
+  rows.forEach(function(r){
+    if(!data[r.dt])data[r.dt]={};
+    var existed=data[r.dt][r.platKey]!==undefined;
+    if(action==='skip'&&existed)return;
+    if(existed)overwritten++;else imported++;
+    data[r.dt][r.platKey]={gmv:r.gmv,refund:r.refund,orders:r.orders,uv:r.uv,pv:r.pv,newcust:r.newcust,adcost:r.adcost};
+    if(!minDt||r.dt<minDt)minDt=r.dt;
+    if(!maxDt||r.dt>maxDt)maxDt=r.dt;
+  });
+
+  if(imported===0&&overwritten===0){showToast('没有数据被导入');return;}
+
+  saveData(data);
+  if(minDt)document.getElementById('dateFrom').value=minDt;
+  if(maxDt)document.getElementById('dateTo').value=maxDt;
+  var msg='导入完成：新增 '+imported+' 条';
+  if(overwritten>0)msg+='，覆盖 '+overwritten+' 条';
+  showToast(msg);
+  loadHistory();
+  switchTab('dashboard');
+}
+
+/* ======= Platform filter helpers ======= */
+function getSelectedPlatforms(){
+  var cbs=document.querySelectorAll('#platFilter input[type=checkbox]');
+  var sel=[];
+  cbs.forEach(function(cb){
+    if(cb.checked){
+      var p=PLATFORMS.find(function(pp){return pp.key===cb.value;});
+      if(p)sel.push(p);
+    }
+  });
+  return sel;
+}
+
+function buildPlatformFilter(){
+  var html='';
+  PLATFORMS.forEach(function(p){
+    html+='<label id="pf_'+p.key+'"><input type="checkbox" value="'+p.key+'" checked onchange="onPlatFilterChange()">'+p.name+'</label>';
+  });
+  document.getElementById('platFilter').innerHTML=html;
+}
+
+function onPlatFilterChange(){
+  var cbs=document.querySelectorAll('#platFilter input[type=checkbox]');
+  cbs.forEach(function(cb){
+    var lbl=document.getElementById('pf_'+cb.value);
+    if(lbl)lbl.className=cb.checked?'checked':'';
+  });
+}
+
+function toggleAllPlatforms(){
+  var cbs=document.querySelectorAll('#platFilter input[type=checkbox]');
+  var allChecked=true;
+  cbs.forEach(function(cb){if(!cb.checked)allChecked=false;});
+  var newState=!allChecked;
+  cbs.forEach(function(cb){cb.checked=newState;});
+  onPlatFilterChange();
+}
+
+function quickRange(days){
+  var now=new Date();
+  var today=new Date(now.getFullYear(),now.getMonth(),now.getDate());
+  var yesterday=new Date(today);yesterday.setDate(yesterday.getDate()-1);
+  var start=new Date(yesterday);start.setDate(start.getDate()-(days-1));
+  document.getElementById('dateFrom').value=formatDate(start);
+  document.getElementById('dateTo').value=formatDate(yesterday);
+  /* Highlight active button */
+  document.querySelectorAll('.quick-range button').forEach(function(b){b.classList.remove('active');});
+  event.target.classList.add('active');
+  refreshDashboard();
+}
+
+function getFilteredData(){
+  var from=document.getElementById('dateFrom').value;
+  var to=document.getElementById('dateTo').value;
+  var data=getData();
+  if(!from||!to)return{dates:[],data:data};
+  /* Generate every date in [from, to] so the chart always aligns with the picker range */
+  var range=[];
+  var parts=from.split('-');
+  var cur=new Date(+parts[0],parts[1]-1,+parts[2]);
+  var endParts=to.split('-');
+  var endDate=new Date(+endParts[0],endParts[1]-1,+endParts[2]);
+  while(cur<=endDate){
+    range.push(formatDate(cur));
+    cur.setDate(cur.getDate()+1);
+  }
+  return{dates:range,data:data};
+}
+
+function refreshDashboard(){
+  var result=getFilteredData();
+  var dates=result.dates,data=result.data;
+  if(dates.length===0){
+    showToast('当前日期范围内无数据，请先在"数据录入"页录入数据');
+    return;
+  }
+  var selPlats=getSelectedPlatforms();
+  if(selPlats.length===0){
+    showToast('请至少选择一个平台');
+    return;
+  }
+  var totals={gmv:0,netGmv:0,orders:0,uv:0,newcust:0,adcost:0,refund:0};
+  var byPlatform={};
+  selPlats.forEach(function(p){byPlatform[p.key]={gmv:0,refund:0,orders:0,uv:0,pv:0,newcust:0,adcost:0};});
+  var byDate={};
+  dates.forEach(function(dt){
+    var dayData=data[dt]||{};
+    var dayGmv=0;
+    selPlats.forEach(function(p){
+      var d=dayData[p.key]||{};
+      byPlatform[p.key].gmv+=d.gmv||0;
+      byPlatform[p.key].refund+=d.refund||0;
+      byPlatform[p.key].orders+=d.orders||0;
+      byPlatform[p.key].uv+=d.uv||0;
+      byPlatform[p.key].pv+=d.pv||0;
+      byPlatform[p.key].newcust+=d.newcust||0;
+      byPlatform[p.key].adcost+=d.adcost||0;
+      dayGmv+=d.gmv||0;
+    });
+    byDate[dt]=dayGmv;
+  });
+  for(var k in byPlatform){totals.gmv+=byPlatform[k].gmv;totals.refund+=byPlatform[k].refund;totals.orders+=byPlatform[k].orders;totals.uv+=byPlatform[k].uv;totals.newcust+=byPlatform[k].newcust;totals.adcost+=byPlatform[k].adcost;}
+  totals.netGmv=totals.gmv-totals.refund;
+
+  /* KPI: only GMV and Net GMV, with period-over-period comparison */
+  document.getElementById('kpiGmv').textContent=fmtMoney(totals.gmv);
+  document.getElementById('kpiNetGmv').textContent=fmtMoney(totals.netGmv);
+
+  /* KPI: GMV Top1 platform (using 去退GMV) */
+  var topPlat=null,topGmv=0;
+  selPlats.forEach(function(p){
+    var ng=byPlatform[p.key].gmv-byPlatform[p.key].refund;
+    if(ng>topGmv){topGmv=ng;topPlat=p;}
+  });
+  if(topPlat&&topGmv>0){
+    document.getElementById('kpiTopPlatform').textContent=topPlat.name;
+    document.getElementById('kpiTopPlatform').style.color=topPlat.color;
+    document.getElementById('kpiTopShare').textContent='占全渠道 '+(totals.netGmv>0?(topGmv/totals.netGmv*100).toFixed(1):0)+'%';
+    document.getElementById('kpiTopCard').style.borderLeft='3px solid '+topPlat.color;
+  }else{
+    document.getElementById('kpiTopPlatform').textContent='--';
+    document.getElementById('kpiTopPlatform').style.color='#2c2c2a';
+    document.getElementById('kpiTopShare').textContent='';
+    document.getElementById('kpiTopCard').style.borderLeft='';
+  }
+
+  /* Calculate previous period for comparison: 环比=前N天, 同比=去年同期N天 */
+  var n=dates.length;
+  var allData=getData();
+  var prevGmv=0,prevNet=0;
+  var prevByPlatform={};
+  selPlats.forEach(function(p){prevByPlatform[p.key]={gmv:0,refund:0,adcost:0,orders:0,uv:0,pv:0,newcust:0};});
+  var firstDate=dates[0];
+  var parts=firstDate.split('-');
+  for(var i=0;i<n;i++){
+    var d;
+    if(compareMode==='yoy'){
+      /* 同比: 本期第 i 天的去年同期 */
+      var dtParts=dates[i].split('-');
+      d=new Date(+dtParts[0],dtParts[1]-1,+dtParts[2]);
+      d.setFullYear(d.getFullYear()-1);
+    }else{
+      /* 环比: 前 N 天 (firstDate-1 ~ firstDate-n) */
+      d=new Date(+parts[0],parts[1]-1,+parts[2]);
+      d.setDate(d.getDate()-(i+1));
+    }
+    var ps=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+    if(allData[ps]){
+      var pd=allData[ps];
+      selPlats.forEach(function(p){
+        var dd=pd[p.key]||{};
+        prevGmv+=dd.gmv||0;
+        prevNet+=(dd.gmv||0)-(dd.refund||0);
+        prevByPlatform[p.key].gmv+=dd.gmv||0;
+        prevByPlatform[p.key].refund+=dd.refund||0;
+        prevByPlatform[p.key].adcost+=dd.adcost||0;
+        prevByPlatform[p.key].orders+=dd.orders||0;
+        prevByPlatform[p.key].uv+=dd.uv||0;
+        prevByPlatform[p.key].pv+=dd.pv||0;
+        prevByPlatform[p.key].newcust+=dd.newcust||0;
+      });
+    }
+  }
+
+  /* Set dynamic delta label */
+  var modeText=getCompareModeText();
+  var deltaLabel;
+  if(n===1)deltaLabel='单日'+modeText;
+  else if(n<=7)deltaLabel='周度'+modeText;
+  else if(n<=31)deltaLabel='月度'+modeText;
+  else deltaLabel='周期'+modeText;
+  var hasDataInPrev=prevGmv>0;
+  document.getElementById('kpiGmvDeltaLabel').textContent=deltaLabel;
+  document.getElementById('kpiNetGmvDeltaLabel').textContent=deltaLabel;
+  /* Update chart title compare tags */
+  document.querySelectorAll('.compare-tag').forEach(function(t){t.textContent='('+modeText+')';});
+  /* Update growth card label */
+  document.getElementById('kpiGrowthLabel').textContent=modeText+'增长率最高平台';
+
+  if(hasDataInPrev){
+    setDelta('kpiGmvDelta',totals.gmv/prevGmv-1);
+    setDelta('kpiNetGmvDelta',totals.netGmv/prevNet-1);
+  }else{
+    document.getElementById('kpiGmvDelta').textContent='上期无数据';
+    document.getElementById('kpiNetGmvDelta').textContent='上期无数据';
+  }
+
+  /* KPI: Platform with highest period-over-period 去退GMV growth rate */
+  var bestGrowthPlat=null,bestGrowthRate=-Infinity;
+  var growthDebug=[];
+  selPlats.forEach(function(p){
+    var cur=byPlatform[p.key].gmv-byPlatform[p.key].refund;
+    var prev=prevByPlatform[p.key].gmv-prevByPlatform[p.key].refund;
+    var rate=prev>0?(cur-prev)/prev:null;
+    growthDebug.push({platform:p.name,curGmv:cur,prevGmv:prev,growthRate:rate});
+    if(prev>0&&cur>0){
+      if(rate>bestGrowthRate){bestGrowthRate=rate;bestGrowthPlat=p;}
+    }
+  });
+  /* Print detailed breakdown to browser console for debugging */
+  console.log('=== 环比增长率明细（日期范围: '+dates[0]+' ~ '+dates[dates.length-1]+'，共'+dates.length+'天）===');
+  growthDebug.forEach(function(g){
+    var rateText=g.growthRate!==null?((g.growthRate*100).toFixed(1)+'%'):'上期无数据';
+    console.log(g.platform+': 当期¥'+Math.round(g.curGmv).toLocaleString()+' | 上期¥'+Math.round(g.prevGmv).toLocaleString()+' | 环比 '+rateText);
+  });
+  if(bestGrowthPlat)console.log('>>> 环比增长率最高: '+bestGrowthPlat.name+' ('+(bestGrowthRate*100).toFixed(1)+'%)');
+  if(bestGrowthPlat){
+    var growthPct=(bestGrowthRate*100).toFixed(1);
+    document.getElementById('kpiGrowthPlatform').textContent=bestGrowthPlat.name;
+    document.getElementById('kpiGrowthPlatform').style.color=bestGrowthPlat.color;
+    document.getElementById('kpiGrowthRate').textContent=modeText+'增长 '+(bestGrowthRate>=0?'+':'')+growthPct+'%';
+    document.getElementById('kpiGrowthRate').style.color=bestGrowthRate>=0?'#1D9E75':'#DC2626';
+    document.getElementById('kpiGrowthCard').style.borderLeft='3px solid '+bestGrowthPlat.color;
+  }else{
+    document.getElementById('kpiGrowthPlatform').textContent='--';
+    document.getElementById('kpiGrowthPlatform').style.color='#2c2c2a';
+    document.getElementById('kpiGrowthRate').textContent='上期无数据';
+    document.getElementById('kpiGrowthRate').style.color='#888780';
+    document.getElementById('kpiGrowthCard').style.borderLeft='';
+  }
+
+  /* ===== Month-To-Date Achievement Rate ===== */
+  var mtd=getMTD();
+  var targets=getTargets();
+  var targetMonth=getTargetMonthKey();
+  var mtdData={}; /* per platform: 去退GMV in MTD period */
+  selPlats.forEach(function(p){mtdData[p.key]=0;});
+
+  var dateParts=mtd.from.split('-');
+  var dIter=new Date(+dateParts[0],dateParts[1]-1,+dateParts[2]);
+  var toParts=mtd.to.split('-');
+  var toIter=new Date(+toParts[0],toParts[1]-1,+toParts[2]);
+  while(dIter<=toIter){
+    var dtStr=formatDate(dIter);
+    if(allData[dtStr]){
+      selPlats.forEach(function(p){
+        var dd=allData[dtStr][p.key]||{};
+        mtdData[p.key]+=(dd.gmv||0)-(dd.refund||0);
+      });
+    }
+    dIter.setDate(dIter.getDate()+1);
+  }
+
+  /* Find platform with highest achievement rate */
+  var bestAchievePlat=null,bestAchieveRate=-Infinity;
+  selPlats.forEach(function(p){
+    var tgt=targets[targetMonth]&&targets[targetMonth][p.key]||0;
+    if(tgt>0){
+      var rate=mtdData[p.key]/tgt*100;
+      if(rate>bestAchieveRate){bestAchieveRate=rate;bestAchievePlat=p;}
+    }
+  });
+  if(bestAchievePlat){
+    document.getElementById('kpiAchievePlatform').textContent=bestAchievePlat.name;
+    document.getElementById('kpiAchievePlatform').style.color=bestAchievePlat.color;
+    document.getElementById('kpiAchieveRate').textContent='达成率 '+bestAchieveRate.toFixed(1)+'%';
+    document.getElementById('kpiAchieveRate').style.color=bestAchieveRate>=100?'#1D9E75':'#DC2626';
+    document.getElementById('kpiAchieveCard').style.borderLeft='3px solid '+bestAchievePlat.color;
+  }else{
+    document.getElementById('kpiAchievePlatform').textContent='未设目标';
+    document.getElementById('kpiAchievePlatform').style.color='#2c2c2a';
+    document.getElementById('kpiAchieveRate').textContent='请先在设置中设目标';
+    document.getElementById('kpiAchieveRate').style.color='#888780';
+    document.getElementById('kpiAchieveCard').style.borderLeft='';
+  }
+
+  /* KPI: All-channel achievement rate */
+  var totalMtdActual=0,totalMtdTarget=0;
+  selPlats.forEach(function(p){
+    var tgt=targets[targetMonth]&&targets[targetMonth][p.key]||0;
+    totalMtdActual+=mtdData[p.key]||0;
+    totalMtdTarget+=tgt;
+  });
+  if(totalMtdTarget>0){
+    var totalAchieveRate=totalMtdActual/totalMtdTarget*100;
+    document.getElementById('kpiTotalAchieveRate').textContent=totalAchieveRate.toFixed(1)+'%';
+    document.getElementById('kpiTotalAchieveRate').style.color=totalAchieveRate>=100?'#1D9E75':'#DC2626';
+    document.getElementById('kpiTotalAchieveDetail').textContent=fmtMoney(totalMtdActual)+' / '+fmtMoney(totalMtdTarget);
+    document.getElementById('kpiTotalAchieveDetail').style.color='#888780';
+    document.getElementById('kpiTotalAchieveCard').style.borderLeft='3px solid '+(totalAchieveRate>=100?'#1D9E75':'#DC2626');
+  }else{
+    document.getElementById('kpiTotalAchieveRate').textContent='--';
+    document.getElementById('kpiTotalAchieveRate').style.color='#2c2c2a';
+    document.getElementById('kpiTotalAchieveDetail').textContent='请先在设置中设目标';
+    document.getElementById('kpiTotalAchieveDetail').style.color='#888780';
+    document.getElementById('kpiTotalAchieveCard').style.borderLeft='';
+  }
+
+  renderGmvChart(selPlats,dates,data,totals,prevGmv,prevNet);
+  renderShareChart(selPlats,byPlatform,prevByPlatform);
+  renderAdRoiChart(selPlats,byPlatform,prevByPlatform);
+  renderTrafficChart(selPlats,byPlatform,prevByPlatform);
+  renderSummaryTable(selPlats,byPlatform,totals);
+  renderAchieveChart(selPlats,mtdData,targets,targetMonth);
+}
+
+function setDelta(id,ratio){
+  var el=document.getElementById(id);
+  var pct=(ratio*100).toFixed(1);
+  if(ratio>0.001){el.textContent='+'+pct+'%';el.className='kpi-delta up';}
+  else if(ratio<-0.001){el.textContent=pct+'%';el.className='kpi-delta down';}
+  else{el.textContent='持平';el.className='kpi-delta neutral';}
+}
+
+function renderGmvChart(plats,dates,data,totals,prevGmv,prevNet){
+  var dateLabels=dates.map(function(dt){return shortDate(dt);});
+  var datasets=plats.map(function(p){
+    return{label:p.name,data:dates.map(function(dt){var d=data[dt]&&data[dt][p.key];return d?Math.round(((d.gmv||0)-(d.refund||0))/10000*10)/10:0;}),borderColor:p.color,backgroundColor:p.color+'20',tension:0.3,borderWidth:2,pointRadius:3};
+  });
+  /* Build legend with total comparison (using 去退GMV) */
+  var totalRate=prevNet>0?(totals.netGmv-prevNet)/prevNet:null;
+  var rateTag='';
+  if(totalRate!==null){
+    var rpct=(totalRate*100).toFixed(1);
+    if(totalRate>0.001)rateTag='<span class="kpi-delta up" style="font-size:11px;margin-left:8px;">▲ 全渠道'+getCompareModeText()+' +'+rpct+'%</span>';
+    else if(totalRate<-0.001)rateTag='<span class="kpi-delta down" style="font-size:11px;margin-left:8px;">▼ 全渠道'+getCompareModeText()+' '+rpct+'%</span>';
+    else rateTag='<span class="kpi-delta neutral" style="font-size:11px;margin-left:8px;">≈ 持平</span>';
+  }
+  var legendHtml=plats.map(function(p){return'<span class="legend-item"><span class="legend-dot" style="background:'+p.color+';"></span>'+p.name+'</span>';}).join('')+rateTag;
+  document.getElementById('legendGmv').innerHTML=legendHtml;
+  if(charts.gmv)charts.gmv.destroy();
+  charts.gmv=new Chart(document.getElementById('chartGmv'),{type:'line',data:{labels:dateLabels,datasets:datasets},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
+    scales:{y:{beginAtZero:true,ticks:{font:{size:11},callback:function(v){return v+'\u4e07';}}},x:{ticks:{font:{size:11}}}}}});
+}
+
+function renderShareChart(plats,byPlatform,prevByPlatform){
+  var labels=plats.map(function(p){return p.name;});
+  var values=plats.map(function(p){return byPlatform[p.key].gmv-byPlatform[p.key].refund;});
+  var colors=plats.map(function(p){return p.color;});
+  /* Compute 环比 growth rates for each platform (using 去退GMV) */
+  var growthRates=plats.map(function(p){
+    var cur=byPlatform[p.key].gmv-byPlatform[p.key].refund;
+    var prev=prevByPlatform[p.key].gmv-prevByPlatform[p.key].refund;
+    return prev>0?(cur-prev)/prev:null;
+  });
+  /* Build legend with 环比 labels + 去退GMV actual value */
+  var legendHtml2=plats.map(function(p,i){
+    var rate=growthRates[i];
+    var tag='',gmvText='';
+    var gmv=(byPlatform[p.key].gmv-byPlatform[p.key].refund);
+    gmvText=gmv>0?'<span style="color:#555;font-size:10px;margin-left:4px;">'+fmtMoney(gmv)+'</span>':'';
+    if(rate!==null){
+      var rpct=(rate*100).toFixed(1);
+      if(rate>0.001)tag='<span class="kpi-delta up" style="font-size:10px;margin-left:4px;">+'+rpct+'%</span>';
+      else if(rate<-0.001)tag='<span class="kpi-delta down" style="font-size:10px;margin-left:4px;">'+rpct+'%</span>';
+      else tag='<span class="kpi-delta neutral" style="font-size:10px;margin-left:4px;">持平</span>';
+    }
+    return'<span class="legend-item"><span class="legend-dot" style="background:'+p.color+';"></span>'+p.name+gmvText+tag+'</span>';
+  }).join('');
+  document.getElementById('legendShare').innerHTML=legendHtml2;
+  if(charts.share)charts.share.destroy();
+  var totalVal=values.reduce(function(a,b){return a+b;},0);
+  charts.share=new Chart(document.getElementById('chartShare'),{type:'doughnut',
+    data:{labels:labels,datasets:[{data:values,backgroundColor:colors,borderWidth:0}]},
+    options:{responsive:true,maintainAspectRatio:false,layout:{padding:{top:50,bottom:10,left:30,right:30}},
+      plugins:{legend:{display:false},
+        tooltip:{callbacks:{label:function(ctx){var pct=totalVal>0?(ctx.raw/totalVal*100).toFixed(1):0;return ctx.label+': '+fmtMoney(ctx.raw)+' ('+pct+'%)';}}}},
+      cutout:'50%'},
+    plugins:[{id:'pctLabels',afterDatasetsDraw:function(chart){
+      var ctx=chart.ctx,meta=chart.getDatasetMeta(0);
+      if(!meta.data.length)return;
+      ctx.save();ctx.textAlign='center';ctx.textBaseline='middle';
+      meta.data.forEach(function(el,i){
+        if(totalVal<=0||values[i]<=0)return;
+        var pct=(values[i]/totalVal*100).toFixed(1)+'%';
+        var angle=(el.startAngle+el.endAngle)/2;
+        var nameR=el.outerRadius*1.1;
+        var pctR=el.outerRadius*0.65;
+        var xName=el.x+Math.cos(angle)*nameR;
+        var yName=el.y+Math.sin(angle)*nameR;
+        var xPct=el.x+Math.cos(angle)*pctR;
+        var yPct=el.y+Math.sin(angle)*pctR;
+        ctx.font='bold 11px -apple-system,sans-serif';
+        ctx.fillStyle=colors[i];ctx.fillText(labels[i],xName,yName);
+        ctx.font='bold 12px -apple-system,sans-serif';
+        ctx.fillStyle='#fff';ctx.fillText(pct,xPct,yPct);
+      });
+      ctx.restore();
+    }}]});
+}
+
+function renderAdRoiChart(plats,byPlatform,prevByPlatform){
+  document.getElementById('legendAdRoi').innerHTML='<span class="legend-item"><span class="legend-dot" style="background:#BA7517;"></span>推广费用(万)</span><span class="legend-item"><span class="legend-dot" style="background:#0F6E56;"></span>ROI</span>';
+  var labels=plats.map(function(p){return p.name;});
+  var adData=plats.map(function(p){return Math.round(byPlatform[p.key].adcost/10000*10)/10;});
+  var roiData=plats.map(function(p){var b=byPlatform[p.key];var ng=b.gmv-b.refund;return b.adcost>0?+(ng/b.adcost).toFixed(1):0;});
+  /* Compute 环比 diffs */
+  var adDiffs=plats.map(function(p){
+    var cur=byPlatform[p.key].adcost;
+    var prev=prevByPlatform[p.key].adcost;
+    return prev>0?Math.round((cur-prev)/1000)/10:null;
+  });
+  var roiDiffs=plats.map(function(p){
+    var b=byPlatform[p.key],pb=prevByPlatform[p.key];
+    if(b.adcost<=0||pb.adcost<=0)return null;
+    return (b.gmv-b.refund)/b.adcost-(pb.gmv-pb.refund)/pb.adcost;
+  });
+  var y1AdMax=Math.max.apply(null,roiData);y1AdMax=Math.ceil(y1AdMax*1.3)||10;
+  var maxAd=Math.max.apply(null,adData);
+  if(charts.adRoi)charts.adRoi.destroy();
+  charts.adRoi=new Chart(document.getElementById('chartAdRoi'),{type:'bar',
+    data:{labels:labels,datasets:[
+      {label:'ROI',data:roiData,type:'line',borderColor:'#0F6E56',backgroundColor:'#0F6E56',borderWidth:2.5,pointRadius:3.5,pointHoverRadius:5,pointBackgroundColor:'#fff',pointBorderWidth:2,yAxisID:'y1',tension:0.3,order:1},
+      {label:'推广费用(万)',data:adData,backgroundColor:'rgba(186,117,23,0.55)',borderColor:'#BA7517',borderWidth:1,borderRadius:4,yAxisID:'y',order:2}
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
+      scales:{y:{beginAtZero:true,position:'left',grid:{display:false},ticks:{font:{size:11},callback:function(v){return v+'万';}}},y1:{beginAtZero:true,position:'right',grid:{display:false},ticks:{font:{size:11},callback:function(v){return v;}},afterDataLimits:function(axis){axis.max=Math.ceil(axis.max*1.3)||10;}},x:{grid:{display:false},ticks:{font:{size:10}}}}},
+    plugins:[{id:'adRoiLabels',afterDatasetsDraw:function(chart){
+      var ctx=chart.ctx;
+      var lineMeta=chart.getDatasetMeta(0);
+      var barMeta=chart.getDatasetMeta(1);
+      if(!lineMeta.data.length||!barMeta.data.length)return;
+      ctx.save();ctx.textAlign='center';
+      /* Pass 1: bar value + 环比 → inside chart, near x-axis */
+      barMeta.data.forEach(function(pt,i){
+        ctx.font='bold 11px -apple-system,sans-serif';
+        ctx.fillStyle='#7A4E0E';ctx.textBaseline='bottom';
+        ctx.fillText(adData[i].toFixed(1),pt.x,pt.base-4);
+        if(adDiffs[i]!==null){
+          ctx.font='bold 10px -apple-system,sans-serif';
+          var diff=adDiffs[i];
+          if(diff>0.01){ctx.fillStyle='#1D9E75';ctx.fillText('\u25b2 +'+diff.toFixed(1),pt.x,pt.base-18);}
+          else if(diff<-0.01){ctx.fillStyle='#DC2626';ctx.fillText('\u25bc '+diff.toFixed(1),pt.x,pt.base-18);}
+          else{ctx.fillStyle='#888780';ctx.fillText('\u2248\u5e73',pt.x,pt.base-18);}
+        }
+      });
+      /* Pass 2: line ROI + ROI环比 → above chart points */
+      lineMeta.data.forEach(function(pt,i){
+        if(adData[i]<=0)return;
+        ctx.font='bold 12px -apple-system,sans-serif';
+        ctx.fillStyle='#0F6E56';ctx.textBaseline='bottom';
+        ctx.fillText(roiData[i].toFixed(1),pt.x,pt.y-14);
+        if(roiDiffs[i]!==null){
+          ctx.font='bold 10px -apple-system,sans-serif';
+          var diff=roiDiffs[i];
+          if(diff>0.005){ctx.fillStyle='#1D9E75';ctx.fillText('\u25b2 +'+diff.toFixed(1),pt.x,pt.y-28);}
+          else if(diff<-0.005){ctx.fillStyle='#DC2626';ctx.fillText('\u25bc '+diff.toFixed(1),pt.x,pt.y-28);}
+          else{ctx.fillStyle='#888780';ctx.fillText('\u2248\u5e73',pt.x,pt.y-28);}
+        }
+      });
+      ctx.restore();
+    }}]});
+}
+
+function renderTrafficChart(plats,byPlatform,prevByPlatform){
+  document.getElementById('legendTraffic').innerHTML='<span class="legend-item"><span class="legend-dot" style="background:#378ADD;"></span>访客UV(万)</span><span class="legend-item"><span class="legend-dot" style="background:#D85A30;"></span>转化率(%)</span>';
+  var labels=plats.map(function(p){return p.name;});
+  var uvData=plats.map(function(p){return Math.round(byPlatform[p.key].uv/100)/100;});
+  var cvrData=plats.map(function(p){var b=byPlatform[p.key];return b.uv>0?+(b.orders/b.uv*100).toFixed(1):0;});
+  /* Compute 环比 diffs */
+  var uvDiffs=plats.map(function(p){
+    var cur=byPlatform[p.key].uv;
+    var prev=prevByPlatform[p.key].uv;
+    return prev>0?Math.round((cur-prev)/100)/100:null;
+  });
+  var cvrDiffs=plats.map(function(p){
+    var b=byPlatform[p.key],pb=prevByPlatform[p.key];
+    if(b.uv<=0||pb.uv<=0)return null;
+    return b.orders/b.uv*100-pb.orders/pb.uv*100;
+  });
+  if(charts.traffic)charts.traffic.destroy();
+  charts.traffic=new Chart(document.getElementById('chartTraffic'),{type:'bar',
+    data:{labels:labels,datasets:[
+      {label:'转化率(%)',data:cvrData,type:'line',borderColor:'#D85A30',backgroundColor:'#D85A30',borderWidth:2.5,pointRadius:3.5,pointHoverRadius:5,pointBackgroundColor:'#fff',pointBorderWidth:2,yAxisID:'y1',tension:0.3,order:1},
+      {label:'访客UV(万)',data:uvData,backgroundColor:'rgba(55,138,221,0.55)',borderColor:'#378ADD',borderWidth:1,borderRadius:4,yAxisID:'y',order:2}
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
+      scales:{y:{beginAtZero:true,position:'left',grid:{display:false},ticks:{font:{size:11},callback:function(v){return v+'万';}}},y1:{beginAtZero:true,position:'right',grid:{display:false},ticks:{font:{size:11},callback:function(v){return v+'%';}},afterDataLimits:function(axis){axis.max=Math.ceil(axis.max*1.3)||10;}},x:{grid:{display:false},ticks:{font:{size:10}}}}},
+    plugins:[{id:'trafficLabels',afterDatasetsDraw:function(chart){
+      var ctx=chart.ctx;
+      var lineMeta=chart.getDatasetMeta(0);
+      var barMeta=chart.getDatasetMeta(1);
+      if(!lineMeta.data.length||!barMeta.data.length)return;
+      ctx.save();ctx.textAlign='center';
+      /* Pass 1: bar value + 环比 → inside chart, near x-axis */
+      barMeta.data.forEach(function(pt,i){
+        ctx.font='bold 11px -apple-system,sans-serif';
+        ctx.fillStyle='#1A5A9E';ctx.textBaseline='bottom';
+        ctx.fillText(uvData[i].toFixed(1),pt.x,pt.base-4);
+        if(uvDiffs[i]!==null){
+          ctx.font='bold 10px -apple-system,sans-serif';
+          var diff=uvDiffs[i];
+          if(diff>0.001){ctx.fillStyle='#1D9E75';ctx.fillText('\u25b2 +'+diff.toFixed(2),pt.x,pt.base-18);}
+          else if(diff<-0.001){ctx.fillStyle='#DC2626';ctx.fillText('\u25bc '+diff.toFixed(2),pt.x,pt.base-18);}
+          else{ctx.fillStyle='#888780';ctx.fillText('\u2248\u5e73',pt.x,pt.base-18);}
+        }
+      });
+      /* Pass 2: line CVR + CVR环比 → above chart points */
+      lineMeta.data.forEach(function(pt,i){
+        if(uvData[i]<=0)return;
+        ctx.font='bold 12px -apple-system,sans-serif';
+        ctx.fillStyle='#D85A30';ctx.textBaseline='bottom';
+        ctx.fillText(cvrData[i].toFixed(1)+'%',pt.x,pt.y-14);
+        if(cvrDiffs[i]!==null){
+          ctx.font='bold 10px -apple-system,sans-serif';
+          var diff=cvrDiffs[i];
+          if(diff>0.005){ctx.fillStyle='#1D9E75';ctx.fillText('\u25b2 +'+diff.toFixed(1)+'pp',pt.x,pt.y-28);}
+          else if(diff<-0.005){ctx.fillStyle='#DC2626';ctx.fillText('\u25bc '+diff.toFixed(1)+'pp',pt.x,pt.y-28);}
+          else{ctx.fillStyle='#888780';ctx.fillText('\u2248\u5e73',pt.x,pt.y-28);}
+        }
+      });
+      ctx.restore();
+    }}]});
+}
+
+function renderSummaryTable(plats,byPlatform,totals){
+  var html='';
+  plats.forEach(function(p){
+    var b=byPlatform[p.key];
+    var netGmv=b.gmv-b.refund;
+    var aov=b.orders>0?Math.round(b.gmv/b.orders):0;
+    var cvr=b.uv>0?(b.orders/b.uv*100).toFixed(1)+'%':'--';
+    var newPct=b.orders>0?(b.newcust/b.orders*100).toFixed(1)+'%':'--';
+    var roi=b.adcost>0?(netGmv/b.adcost).toFixed(1):'--';
+    var adRatio=netGmv>0?(b.adcost/netGmv*100).toFixed(1)+'%':'--';
+    html+='<tr><td class="'+p.cls+'">'+p.name+'</td><td>\u00a5'+Math.round(b.gmv).toLocaleString()+'</td><td>\u00a5'+Math.round(netGmv).toLocaleString()+'</td><td>'+Math.round(b.orders).toLocaleString()+'</td><td>\u00a5'+aov+'</td><td>'+Math.round(b.uv).toLocaleString()+'</td><td>'+cvr+'</td><td>'+Math.round(b.newcust).toLocaleString()+'</td><td>'+newPct+'</td><td>\u00a5'+Math.round(b.adcost).toLocaleString()+'</td><td>'+roi+'</td><td>'+adRatio+'</td></tr>';
+  });
+  var totalAov=totals.orders>0?Math.round(totals.gmv/totals.orders):0;
+  var totalCvr=totals.uv>0?(totals.orders/totals.uv*100).toFixed(1)+'%':'--';
+  var totalNewPct=totals.orders>0?(totals.newcust/totals.orders*100).toFixed(1)+'%':'--';
+  var totalRoi=totals.adcost>0?(totals.netGmv/totals.adcost).toFixed(1):'--';
+  var totalAdRatio=totals.netGmv>0?(totals.adcost/totals.netGmv*100).toFixed(1)+'%':'--';
+  html+='<tr style="background:#f8f8f6;font-weight:600;"><td>\u5168\u6e20\u9053\u5408\u8ba1</td><td>\u00a5'+Math.round(totals.gmv).toLocaleString()+'</td><td>\u00a5'+Math.round(totals.netGmv).toLocaleString()+'</td><td>'+Math.round(totals.orders).toLocaleString()+'</td><td>\u00a5'+totalAov+'</td><td>'+Math.round(totals.uv).toLocaleString()+'</td><td>'+totalCvr+'</td><td>'+Math.round(totals.newcust).toLocaleString()+'</td><td>'+totalNewPct+'</td><td>\u00a5'+Math.round(totals.adcost).toLocaleString()+'</td><td>'+totalRoi+'</td><td>'+totalAdRatio+'</td></tr>';
+  document.getElementById('summaryBody').innerHTML=html;
+}
+
+function loadSampleData(){
+  var data=getData();
+  if(Object.keys(data).length>0)return;
+  var today=new Date();
+  var samples=[];
+  /* Generate 14 days: previous period (today-13 to today-7) + current period (today-6 to today) */
+  for(var i=13;i>=0;i--){
+    var d=new Date(today);d.setDate(d.getDate()-i);samples.push(formatDate(d));
+  }
+  var baseValues={
+    tmall:{gmv:420000,refund:15000,orders:3200,uv:48000,pv:180000,newcust:800,adcost:60000},
+    jd:{gmv:310000,refund:10000,orders:2600,uv:38000,pv:140000,newcust:600,adcost:45000},
+    tmall_super:{gmv:180000,refund:8000,orders:2000,uv:25000,pv:90000,newcust:400,adcost:25000},
+    douyin1:{gmv:280000,refund:20000,orders:3800,uv:85000,pv:320000,newcust:1500,adcost:80000},
+    douyin2:{gmv:160000,refund:12000,orders:2400,uv:55000,pv:210000,newcust:900,adcost:50000},
+    pdd:{gmv:220000,refund:18000,orders:4200,uv:92000,pv:280000,newcust:1800,adcost:55000}
+  };
+  samples.forEach(function(dt,idx){
+    data[dt]={};
+    PLATFORMS.forEach(function(p){
+      var base=baseValues[p.key];
+      var factor=0.7+Math.random()*0.3+idx*0.04;
+      data[dt][p.key]={gmv:Math.round(base.gmv*factor),refund:Math.round(base.refund*factor),orders:Math.round(base.orders*factor),uv:Math.round(base.uv*factor),pv:Math.round(base.pv*factor),newcust:Math.round(base.newcust*factor),adcost:Math.round(base.adcost*factor)};
+    });
+  });
+  saveData(data);
+}
+
+/* ======= Monthly Targets ======= */
+function getTargets(){
+  if(cloudTargets)return cloudTargets;
+  try{return JSON.parse(localStorage.getItem(TARGETS_KEY))||{};}catch(e){return{};}
+}
+function saveTargets(d){localStorage.setItem(TARGETS_KEY,JSON.stringify(d));}
+
+/* Calculate Month-To-Date period: from last month 27th to today */
+function getMTD(){
+  var now=new Date();
+  /* Normalize to midnight to avoid time-of-day issues */
+  var today=new Date(now.getFullYear(),now.getMonth(),now.getDate());
+  /* MTD ends at yesterday (today's data may be incomplete) */
+  var yesterday=new Date(today);yesterday.setDate(yesterday.getDate()-1);
+  var end=formatDate(yesterday);
+  /* Start = 上月27日 */
+  var startYear=today.getFullYear();
+  var startMonth=today.getMonth()-1; /* 0-based, 上月 */
+  if(startMonth<0){startMonth=11;startYear--;}
+  var start=new Date(startYear,startMonth,27);
+  return{from:formatDate(start),to:end};
+}
+
+/* Calculate time progress % for the MTD tracking period (27th to 26th = one month) */
+function getTimeProgress(){
+  var now=new Date();
+  /* Normalize to midnight */
+  var today=new Date(now.getFullYear(),now.getMonth(),now.getDate());
+  var yesterday=new Date(today);yesterday.setDate(yesterday.getDate()-1);
+  /* Tracking period start: 上月27日 */
+  var startYear=today.getFullYear();
+  var startMonth=today.getMonth()-1;
+  if(startMonth<0){startMonth=11;startYear--;}
+  var start=new Date(startYear,startMonth,27);
+  /* Tracking period end: 本月26日 (one full month from 27th) */
+  var end=new Date(today.getFullYear(),today.getMonth(),26);
+  /* Day count using date-only midnight values */
+  var totalDays=Math.round((end-start)/86400000)+1; /* inclusive both ends */
+  var elapsedDays=Math.round((yesterday-start)/86400000)+1;
+  if(elapsedDays<0)elapsedDays=0;
+  if(elapsedDays>totalDays)elapsedDays=totalDays;
+  if(totalDays<=0)totalDays=1;
+  return elapsedDays/totalDays*100;
+}
+
+/* Get target year-month key: always the current month (the month containing today) */
+function getTargetMonthKey(){
+  var today=new Date();
+  return today.getFullYear()+'-'+String(today.getMonth()+1).padStart(2,'0');
+}
+
+/* Load target input rows into settings UI */
+function loadTargetsUI(){
+  var month=document.getElementById('targetMonth').value;
+  if(!month){showToast('请先选择目标月份');return;}
+  var targets=getTargets();
+  var vals=targets[month]||{};
+  var html='';
+  PLATFORMS.forEach(function(p){
+    var v=vals[p.key]!==undefined?vals[p.key]:'';
+    html+='<tr><td class="'+p.cls+'" style="text-align:left;">'+p.name+'</td><td><input type="number" id="tgt_'+p.key+'" value="'+v+'" placeholder="0" style="width:100%;padding:6px 8px;border:1px solid #ddd;border-radius:4px;font-size:13px;"></td><td style="font-size:12px;color:#888780;">'+(v?'已设':'未设')+'</td></tr>';
+  });
+  document.getElementById('targetsBody').innerHTML=html;
+  /* Show existing targets for this month if any */
+  var existing=[];
+  for(var k in targets){
+    var hasAny=false;
+    for(var pk in targets[k]){if(targets[k][pk]>0)hasAny=true;}
+    if(hasAny)existing.push(k);
+  }
+  if(existing.length>0){
+    document.getElementById('targetsList').innerHTML='已设目标月份：'+existing.sort().map(function(m){return'<span style="color:#2563EB;cursor:pointer;margin:0 4px;" onclick="document.getElementById(\'targetMonth\').value=\''+m+'\';loadTargetsUI();">'+m+'</span>';}).join('');
+  }else{
+    document.getElementById('targetsList').innerHTML='';
+  }
+}
+
+function saveTargetsUI(){
+  var month=document.getElementById('targetMonth').value;
+  if(!month){showToast('请先选择目标月份');return;}
+  var targets=getTargets();
+  targets[month]={};
+  PLATFORMS.forEach(function(p){
+    var v=parseFloat(document.getElementById('tgt_'+p.key).value)||0;
+    if(v>0)targets[month][p.key]=v;
+  });
+  saveTargets(targets);
+  showToast(month+' 目标已保存');
+  loadTargetsUI();
+}
+
+function renderAchieveChart(plats,mtdData,targets,targetMonth){
+  var labels=plats.map(function(p){return p.name;});
+  var achieveData=plats.map(function(p){
+    var tgt=targets[targetMonth]&&targets[targetMonth][p.key]||0;
+    var actual=mtdData[p.key]||0;
+    return tgt>0?+(actual/tgt*100).toFixed(1):0;
+  });
+  var colors=plats.map(function(p){return p.color;});
+  /* Show MTD period in title */
+  var mtd=getMTD();
+  document.getElementById('achieveTitle').innerHTML='（'+mtd.from+' ~ '+mtd.to+'，目标月份：'+targetMonth+'）';
+  if(charts.achieve)charts.achieve.destroy();
+  charts.achieve=new Chart(document.getElementById('chartAchieve'),{type:'bar',
+    data:{labels:labels,datasets:[{data:achieveData,backgroundColor:plats.map(function(p){return p.color+'99';}),borderColor:colors,borderWidth:1,borderRadius:6}]},
+    options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',layout:{padding:{top:40,right:8,bottom:4,left:4}},
+      plugins:{legend:{display:false},
+        tooltip:{callbacks:{label:function(ctx){return'达成率: '+ctx.raw+'%';}}}},
+      scales:{x:{beginAtZero:true,ticks:{font:{size:11},callback:function(v){return v+'%';}},afterDataLimits:function(axis){axis.max=Math.ceil(Math.max(axis.max,100)*1.15);}},y:{ticks:{font:{size:11}}}}},
+    plugins:[{id:'achieveLabels',afterDatasetsDraw:function(chart){
+      var ctx=chart.ctx,meta=chart.getDatasetMeta(0);
+      if(!meta.data.length)return;
+      ctx.save();ctx.textAlign='left';ctx.textBaseline='middle';
+      meta.data.forEach(function(el,i){
+        if(achieveData[i]<=0)return;
+        ctx.font='bold 12px -apple-system,sans-serif';
+        var color=achieveData[i]>=100?'#1D9E75':'#DC2626';
+        ctx.fillStyle=color;
+        ctx.fillText(achieveData[i].toFixed(1)+'%',el.x+6,el.y);
+      });
+      /* Draw time progress reference line - calculate fresh each redraw */
+      var liveTimePct=getTimeProgress();
+      var xScale=chart.scales.x;
+      var yScale=chart.scales.y;
+      var xPos=xScale.getPixelForValue(liveTimePct);
+      if(xPos<xScale.left-2||xPos>xScale.right+2){ctx.restore();return;}
+      /* Clamp xPos to visible area */
+      if(xPos<xScale.left)xPos=xScale.left+1;
+      /* Dashed vertical line */
+      ctx.beginPath();
+      ctx.setLineDash([6,4]);
+      ctx.strokeStyle='rgba(148,163,184,0.8)';
+      ctx.lineWidth=2;
+      ctx.moveTo(xPos,yScale.top);
+      ctx.lineTo(xPos,yScale.bottom);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      /* Label above the line */
+      ctx.fillStyle='#64748B';
+      ctx.font='bold 12px -apple-system,sans-serif';
+      ctx.textAlign='center';
+      ctx.fillText('时间进度 '+liveTimePct.toFixed(1)+'%',xPos,yScale.top-14);
+      ctx.restore();
+    }}]});
+}
+
+window.addEventListener('DOMContentLoaded',function(){
+  document.getElementById('entryDate').value=todayStr();
+  var today=new Date();var yesterday=new Date();yesterday.setDate(yesterday.getDate()-1);var weekAgo=new Date(yesterday);weekAgo.setDate(yesterday.getDate()-6);
+  document.getElementById('dateFrom').value=formatDate(weekAgo);
+  document.getElementById('dateTo').value=formatDate(yesterday);
+  /* Highlight default "近7天" button */
+  var qrBtns=document.querySelectorAll('.quick-range button');
+  if(qrBtns.length>0)qrBtns[0].classList.add('active');
+  buildPlatformFilter();
+  initEntryTable();
+  loadEntryData();
+  loadHistory();
+  loadSampleData();
+  /* Try loading cloud data first, then refresh */
+  fetchCloudData(function(){
+    refreshDashboard();
+  });
+  /* Auto-refresh time progress when date changes (e.g. page left open overnight) */
+  var lastDate=new Date().toDateString();
+  setInterval(function(){
+    var nowDate=new Date().toDateString();
+    if(nowDate!==lastDate){
+      lastDate=nowDate;
+      refreshDashboard();
+    }
+  },60000);
+});
+</script>
+</body>
+</html>
