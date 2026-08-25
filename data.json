@@ -1,10 +1,12 @@
 {
   "_meta": {
-    "source": "腾讯文档 Y26 电商看板数据源 (docs.qq.com/sheet/DZHJsZXZubnNLeU9w) 实时同步",
-    "syncedAt": "2026-08-24 18:15:45",
-    "entriesNote": "真实每日明细，来自『EC汇总』子表。已截断到最新完整日 2026-08-23（之后为未填占位）。",
-    "targetsNote": "真实目标值，来自『月度目标』子表。",
-    "latestCompleteDay": "2026-08-23"
+    "source": "腾讯文档 Y26 电商看板数据源 (docs.qq.com/sheet/DZHJsZXZubnNLeU9w) 增量同步",
+    "syncedAt": "2026-08-25 10:56:19",
+    "strategy": "增量: 非周一=前一日+去年同时间; 周一=上周五~周日+去年同时间; 不回刷历史",
+    "entriesNote": "真实每日明细, 来自『EC汇总』; 部分平台有数据即部分更新。",
+    "targetsNote": "真实目标值, 来自『月度目标』。",
+    "range": "2025-07-01 ~ 2026-08-24",
+    "days": 147
   },
   "targets": {
     "2026-08": {
@@ -5600,7 +5602,7 @@
       },
       "tmall_super": {
         "gmv": 137133.0,
-        "refund": 8642.0,
+        "refund": 8575.0,
         "orders": 4026.0,
         "uv": 16652.0,
         "pv": 40388.0,
@@ -7363,6 +7365,62 @@
         "pv": 56381.0,
         "newcust": 0.0,
         "adcost": 9863.0
+      }
+    },
+    "2026-08-24": {
+      "pdd": {
+        "gmv": 37320.0,
+        "refund": 4427.0,
+        "orders": 678.0,
+        "uv": 6906.0,
+        "pv": 9464.0,
+        "newcust": 0.0,
+        "adcost": 5796.29
+      },
+      "douyin1": {
+        "gmv": 42804.87,
+        "refund": 4158.62,
+        "orders": 466.0,
+        "uv": 2493.0,
+        "pv": 101748.0,
+        "newcust": 0.0,
+        "adcost": 12251.58
+      },
+      "douyin2": {
+        "gmv": 117047.0,
+        "refund": 11234.0,
+        "orders": 682.0,
+        "uv": 3396.0,
+        "pv": 109463.0,
+        "newcust": 0.0,
+        "adcost": 44647.97
+      },
+      "tmall_super": {
+        "gmv": 117642.0,
+        "refund": 10117.0,
+        "orders": 2023.0,
+        "uv": 10712.0,
+        "pv": 30780.0,
+        "newcust": 777.0,
+        "adcost": 12239.84
+      },
+      "jd": {
+        "gmv": 95448.0,
+        "refund": 0.0,
+        "orders": 1578.0,
+        "uv": 4129.0,
+        "pv": 13128.0,
+        "newcust": 0.0,
+        "adcost": 7132.15
+      },
+      "tmall": {
+        "gmv": 151368.0,
+        "refund": 26568.0,
+        "orders": 2619.0,
+        "uv": 24755.0,
+        "pv": 74222.0,
+        "newcust": 1031.0,
+        "adcost": 11530.0
       }
     }
   }
