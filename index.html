@@ -206,6 +206,7 @@ tr:hover td{background:#fafaf8;}
     </div>
     <div class="chart-card">
       <div class="chart-title">去退GMV 平台占比<span class="compare-tag" id="cmpTagShare"></span></div>
+      <div class="legend-row" style="min-height:18px;margin-bottom:6px;color:#888780;">各平台去退GMV 占比</div>
       <div class="share-layout">
         <div class="legend-col" id="legendShare"></div>
         <div class="chart-wrap"><canvas id="chartShare" role="img" aria-label="GMV平台占比饼图">GMV平台占比饼图</canvas></div>
@@ -213,6 +214,7 @@ tr:hover td{background:#fafaf8;}
     </div>
     <div class="chart-card">
       <div class="chart-title">月至今达成率 <span style="font-size:11px;color:#888780;font-weight:400;" id="achieveTitle"></span></div>
+      <div class="legend-row" style="min-height:18px;margin-bottom:6px;color:#888780;">虚线＝时间进度；≥100% 为达标；100% 线右侧为各平台目标(万)</div>
       <div class="chart-wrap"><canvas id="chartAchieve" role="img" aria-label="月至今达成率对比">月至今达成率对比</canvas></div>
     </div>
   </div>
@@ -1478,6 +1480,7 @@ function renderAchieveChart(plats,mtdData,targets,targetMonth){
     return tgt>0?+(actual/tgt*100).toFixed(1):0;
   });
   var colors=plats.map(function(p){return p.color;});
+  var targetVals=plats.map(function(p){return (targets[targetMonth]&&targets[targetMonth][p.key])||0;});
   /* Show MTD period in title */
   var mtd=getMTD();
   document.getElementById('achieveTitle').innerHTML='（'+mtd.from+' ~ '+mtd.to+'，目标月份：'+targetMonth+'）';
@@ -1498,6 +1501,18 @@ function renderAchieveChart(plats,mtdData,targets,targetMonth){
         var color=achieveData[i]>=100?'#1D9E75':'#DC2626';
         ctx.fillStyle=color;
         ctx.fillText(achieveData[i].toFixed(1)+'%',el.x+6,el.y);
+        /* 目标总数标注（万）置于 100% 刻度线右侧 */
+        var tgt=targetVals[i];
+        if(tgt>0){
+          var xs=chart.scales.x;
+          var x100=xs.getPixelForValue(100);
+          if(x100>=xs.left&&x100<=xs.right){
+            ctx.font='10px -apple-system,sans-serif';
+            ctx.fillStyle='#94A3B8';
+            ctx.textAlign='left';ctx.textBaseline='middle';
+            ctx.fillText((tgt/10000).toFixed(1)+'万',x100+5,el.y);
+          }
+        }
       });
       /* Draw time progress reference line - calculate fresh each redraw */
       var liveTimePct=getTimeProgress();
