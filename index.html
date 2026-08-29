@@ -388,10 +388,10 @@ var PLATFORMS = [
   {key:'jd_pop',name:'京东POP',cls:'plat-jd-pop',color:'#0EA5E9'},
   {key:'tmall_super',name:'猫超',cls:'plat-tmall-super',color:'#059669'},
   {key:'jd',name:'京东自营',cls:'plat-jd',color:'#2563EB'},
-  {key:'douyin1',name:'抖1',cls:'plat-douyin1',color:'#7C3AED'},
-  {key:'douyin2',name:'抖2',cls:'plat-douyin2',color:'#F59E0B'},
-  {key:'douyin3',name:'抖3',cls:'plat-douyin3',color:'#EC4899'},
-  {key:'douyin4',name:'抖4',cls:'plat-douyin4',color:'#14B8A6'},
+  {key:'douyin1',name:'抖音1店',cls:'plat-douyin1',color:'#7C3AED'},
+  {key:'douyin2',name:'抖音2店',cls:'plat-douyin2',color:'#F59E0B'},
+  {key:'douyin3',name:'抖音3店',cls:'plat-douyin3',color:'#EC4899'},
+  {key:'douyin4',name:'抖音4店',cls:'plat-douyin4',color:'#14B8A6'},
   {key:'pdd',name:'PDD专营店',cls:'plat-pdd',color:'#DC2626'}
 ];
 var STORAGE_KEY = 'ecom_dashboard_data_v2';
@@ -1483,18 +1483,18 @@ function renderAchieveChart(plats,mtdData,targets,targetMonth){
   document.getElementById('achieveTitle').innerHTML='（'+mtd.from+' ~ '+mtd.to+'，目标月份：'+targetMonth+'）';
   if(charts.achieve)charts.achieve.destroy();
   charts.achieve=new Chart(document.getElementById('chartAchieve'),{type:'bar',
-    data:{labels:labels,datasets:[{data:achieveData,backgroundColor:plats.map(function(p){return p.color+'99';}),borderColor:colors,borderWidth:1,borderRadius:6}]},
-    options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',layout:{padding:{top:40,right:8,bottom:4,left:4}},
+    data:{labels:labels,datasets:[{data:achieveData,backgroundColor:plats.map(function(p){return p.color+'99';}),borderColor:colors,borderWidth:1,borderRadius:5,barThickness:16}]},
+    options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',layout:{padding:{top:24,right:8,bottom:4,left:4}},
       plugins:{legend:{display:false},
         tooltip:{callbacks:{label:function(ctx){return'达成率: '+ctx.raw+'%';}}}},
-      scales:{x:{beginAtZero:true,ticks:{font:{size:11},callback:function(v){return v+'%';}},afterDataLimits:function(axis){axis.max=Math.ceil(Math.max(axis.max,100)*1.15);}},y:{ticks:{font:{size:11}}}}},
+      scales:{x:{beginAtZero:true,ticks:{font:{size:10},callback:function(v){return v+'%';}},afterDataLimits:function(axis){axis.max=Math.ceil(Math.max(axis.max,100)*1.15);}},y:{ticks:{font:{size:10}}}}},
     plugins:[{id:'achieveLabels',afterDatasetsDraw:function(chart){
       var ctx=chart.ctx,meta=chart.getDatasetMeta(0);
       if(!meta.data.length)return;
       ctx.save();ctx.textAlign='left';ctx.textBaseline='middle';
       meta.data.forEach(function(el,i){
         if(achieveData[i]<=0)return;
-        ctx.font='bold 12px -apple-system,sans-serif';
+        ctx.font='bold 11px -apple-system,sans-serif';
         var color=achieveData[i]>=100?'#1D9E75':'#DC2626';
         ctx.fillStyle=color;
         ctx.fillText(achieveData[i].toFixed(1)+'%',el.x+6,el.y);
@@ -1518,9 +1518,9 @@ function renderAchieveChart(plats,mtdData,targets,targetMonth){
       ctx.setLineDash([]);
       /* Label above the line */
       ctx.fillStyle='#64748B';
-      ctx.font='bold 12px -apple-system,sans-serif';
+      ctx.font='bold 11px -apple-system,sans-serif';
       ctx.textAlign='center';
-      ctx.fillText('时间进度 '+liveTimePct.toFixed(1)+'%',xPos,yScale.top-14);
+      ctx.fillText('时间进度 '+liveTimePct.toFixed(1)+'%',xPos,yScale.top-12);
       ctx.restore();
     }}]});
 }
