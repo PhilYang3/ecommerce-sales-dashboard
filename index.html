@@ -298,7 +298,7 @@ tr:hover td{background:#fafaf8;}
   <div class="section-title">已录入数据记录</div>
   <table id="historyTable">
     <thead>
-      <tr><th>日期</th><th>天猫旗舰店</th><th>京东自营</th><th>天猫超市</th><th>抖音1店</th><th>抖音2店</th><th>拼多多专营店</th><th>全渠道GMV</th><th>全渠道推广费</th><th>操作</th></tr>
+      <tr><th>日期</th><th>天猫旗舰店</th><th>京东自营</th><th>天猫超市</th><th>抖音1店</th><th>抖音2店</th><th>拼多多专营店</th><th>京东POP</th><th>抖音3店</th><th>抖音4店</th><th>全渠道GMV</th><th>全渠道推广费</th><th>操作</th></tr>
     </thead>
     <tbody id="historyBody"></tbody>
   </table>
@@ -311,7 +311,7 @@ tr:hover td{background:#fafaf8;}
     <div class="setting-row">
       <div>
         <div class="setting-label">1. 每日录入流程</div>
-        <div class="setting-desc">切换到"数据录入"页 -> 选择日期 -> 填写6个平台数据 -> 点击"保存当日数据"</div>
+        <div class="setting-desc">切换到"数据录入"页 -> 选择日期 -> 填写9个平台数据 -> 点击"保存当日数据"</div>
       </div>
     </div>
     <div class="setting-row">
@@ -388,7 +388,10 @@ var PLATFORMS = [
   {key:'tmall_super',name:'天猫超市',cls:'plat-tmall-super',color:'#059669'},
   {key:'douyin1',name:'抖音1店',cls:'plat-douyin1',color:'#7C3AED'},
   {key:'douyin2',name:'抖音2店',cls:'plat-douyin2',color:'#F59E0B'},
-  {key:'pdd',name:'拼多多专营店',cls:'plat-pdd',color:'#DC2626'}
+  {key:'pdd',name:'拼多多专营店',cls:'plat-pdd',color:'#DC2626'},
+  {key:'jd_pop',name:'京东POP',cls:'plat-jd-pop',color:'#0EA5E9'},
+  {key:'douyin3',name:'抖音3店',cls:'plat-douyin3',color:'#EC4899'},
+  {key:'douyin4',name:'抖音4店',cls:'plat-douyin4',color:'#14B8A6'}
 ];
 var STORAGE_KEY = 'ecom_dashboard_data_v2';
 var TARGETS_KEY = 'ecom_dashboard_targets_v1';
