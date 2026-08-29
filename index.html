@@ -54,7 +54,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Micr
 .plat-filter input[type=checkbox]{zoom:0.85;margin:0;}
 .plat-filter-all{font-size:12px;color:#378ADD;cursor:pointer;white-space:nowrap;margin:0 4px;}
 .plat-filter-all:hover{text-decoration:underline;}
-.toolbar-right{display:flex;gap:8px;}
+.plat-filter-left{display:flex;flex-wrap:wrap;gap:4px;align-items:center;}
 .quick-range{display:flex;gap:4px;margin-left:2px;}
 .quick-range button{font-size:12px;padding:3px 10px;border:1px solid #ddd;border-radius:4px;background:#fff;color:#555;cursor:pointer;transition:all .15s;white-space:nowrap;}
 .quick-range button:hover{border-color:#378ADD;color:#378ADD;}
@@ -71,7 +71,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Micr
 .btn.danger{color:#DC2626;border-color:#DC2626;}
 .btn.danger:hover{background:#FCEBEB;}
 .btn.compact{padding:3px 11px;font-size:12px;}
-.plat-filter-row{display:flex;flex-wrap:wrap;gap:4px;align-items:center;flex-basis:100%;margin-top:6px;}
+.plat-filter-row{display:flex;flex-wrap:wrap;gap:8px;align-items:center;flex-basis:100%;margin-top:6px;}
 .date-input{padding:6px 10px;border:1px solid #ddd;border-radius:6px;font-size:13px;}
 table{width:100%;border-collapse:collapse;background:#fff;border-radius:8px;overflow:hidden;box-shadow:0 0 0 1px #eee;}
 th{background:#f8f8f6;padding:10px 8px;text-align:left;font-size:12px;color:#888780;font-weight:500;border-bottom:1px solid #eee;white-space:nowrap;}
@@ -145,12 +145,12 @@ tr:hover td{background:#fafaf8;}
         <button id="cmpYoy" onclick="setCompareMode('yoy')">同比</button>
       </div>
       <div class="plat-filter-row">
-        <span class="plat-filter-all" onclick="toggleAllPlatforms()">全选</span>
-        <span class="plat-filter" id="platFilter"></span>
+        <div class="plat-filter-left">
+          <span class="plat-filter-all" onclick="toggleAllPlatforms()">全选</span>
+          <span class="plat-filter" id="platFilter"></span>
+        </div>
+        <button class="btn primary compact" style="margin-left:auto;" onclick="refreshDashboard()">刷新看板</button>
       </div>
-    </div>
-    <div class="toolbar-right">
-      <button class="btn primary compact" onclick="refreshDashboard()">刷新看板</button>
     </div>
   </div>
 
@@ -1552,9 +1552,9 @@ window.addEventListener('DOMContentLoaded',function(){
   var today=new Date();var yesterday=new Date();yesterday.setDate(yesterday.getDate()-1);var weekAgo=new Date(yesterday);weekAgo.setDate(yesterday.getDate()-6);
   document.getElementById('dateFrom').value=formatDate(weekAgo);
   document.getElementById('dateTo').value=formatDate(yesterday);
-  /* Highlight default "近7天" button */
+  /* Highlight default "近7天" button (index 1) — range already set to weekAgo~yesterday */
   var qrBtns=document.querySelectorAll('.quick-range button');
-  if(qrBtns.length>0)qrBtns[0].classList.add('active');
+  if(qrBtns.length>1)qrBtns[1].classList.add('active');
   buildPlatformFilter();
   initEntryTable();
   loadEntryData();
