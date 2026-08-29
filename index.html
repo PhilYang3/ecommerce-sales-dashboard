@@ -8,11 +8,11 @@
 <style>
 *{margin:0;padding:0;box-sizing:border-box;}
 body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;background:#f5f5f3;color:#2c2c2a;font-size:14px;line-height:1.6;}
-.header{background:#fff;border-bottom:1px solid #e0e0de;padding:12px 24px;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:100;}
-.header h1{font-size:17px;font-weight:600;}
+.header{background:#fff;border-bottom:1px solid #e0e0de;padding:7px 24px;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:100;}
+.header h1{font-size:15px;font-weight:600;}
 .header-right{display:flex;gap:12px;align-items:center;}
 .tabs{display:flex;gap:0;background:#fff;border-bottom:1px solid #e0e0de;padding:0 24px;}
-.tab{padding:10px 24px;cursor:pointer;font-size:14px;color:#888780;border-bottom:2px solid transparent;transition:all .2s;}
+.tab{padding:6px 18px;cursor:pointer;font-size:13px;color:#888780;border-bottom:2px solid transparent;transition:all .2s;}
 .tab.active{color:#2563EB;border-bottom-color:#2563EB;font-weight:500;}
 .tab:hover{color:#2563EB;}
 .content{padding:10px 24px;max-width:1400px;margin:0 auto;}
@@ -37,6 +37,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Micr
 .chart-title{font-size:13px;font-weight:500;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;}
 .chart-title select{font-size:12px;padding:4px 8px;border:1px solid #ddd;border-radius:4px;background:#fff;}
 .chart-wrap{position:relative;width:100%;height:200px;}
+.chart-wrap-tall{height:360px;}
 .legend-row{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:6px;font-size:11px;color:#888780;}
 .legend-item{display:flex;align-items:center;gap:4px;}
 .legend-col{display:flex;flex-direction:column;gap:6px;font-size:11px;color:#888780;flex-shrink:0;}
@@ -212,7 +213,7 @@ tr:hover td{background:#fafaf8;}
     </div>
     <div class="chart-card">
       <div class="chart-title">月至今达成率 <span style="font-size:11px;color:#888780;font-weight:400;" id="achieveTitle"></span></div>
-      <div class="chart-wrap"><canvas id="chartAchieve" role="img" aria-label="月至今达成率对比">月至今达成率对比</canvas></div>
+      <div class="chart-wrap chart-wrap-tall"><canvas id="chartAchieve" role="img" aria-label="月至今达成率对比">月至今达成率对比</canvas></div>
     </div>
   </div>
 
@@ -298,7 +299,7 @@ tr:hover td{background:#fafaf8;}
   <div class="section-title">已录入数据记录</div>
   <table id="historyTable">
     <thead>
-      <tr><th>日期</th><th>天猫旗舰店</th><th>京东自营</th><th>天猫超市</th><th>抖音1店</th><th>抖音2店</th><th>拼多多专营店</th><th>京东POP</th><th>抖音3店</th><th>抖音4店</th><th>全渠道GMV</th><th>全渠道推广费</th><th>操作</th></tr>
+      <tr><th>日期</th><th>猫旗</th><th>京东POP</th><th>猫超</th><th>京东自营</th><th>抖1</th><th>抖2</th><th>抖3</th><th>抖4</th><th>PDD专营店</th><th>全渠道GMV</th><th>全渠道推广费</th><th>操作</th></tr>
     </thead>
     <tbody id="historyBody"></tbody>
   </table>
@@ -362,7 +363,7 @@ tr:hover td{background:#fafaf8;}
 
   <div class="section-title">月度目标设置</div>
   <div class="settings-panel" style="max-width:100%;">
-    <div class="setting-desc" style="margin-bottom:12px;">设置每月各平台的去退GMV目标，用于计算月至今达成率。月至今定义为上月27日至昨日（今日数据通常未完整）。</div>
+    <div class="setting-desc" style="margin-bottom:12px;">设置每月各平台的去退GMV目标，用于计算月至今达成率。进度周期规则：每月27日起进入次月追踪（如8/27起追踪9月目标），月至今周期=当月27日至昨日（今日数据通常未完整）。</div>
     <div style="margin-bottom:12px;display:flex;gap:8px;align-items:center;">
       <label style="font-size:13px;">目标月份：</label>
       <input type="month" class="date-input" id="targetMonth" style="width:160px;">
@@ -383,15 +384,15 @@ tr:hover td{background:#fafaf8;}
 
 <script>
 var PLATFORMS = [
-  {key:'tmall',name:'天猫旗舰店',cls:'plat-tmall',color:'#FF5722'},
-  {key:'jd',name:'京东自营',cls:'plat-jd',color:'#2563EB'},
-  {key:'tmall_super',name:'天猫超市',cls:'plat-tmall-super',color:'#059669'},
-  {key:'douyin1',name:'抖音1店',cls:'plat-douyin1',color:'#7C3AED'},
-  {key:'douyin2',name:'抖音2店',cls:'plat-douyin2',color:'#F59E0B'},
-  {key:'pdd',name:'拼多多专营店',cls:'plat-pdd',color:'#DC2626'},
+  {key:'tmall',name:'猫旗',cls:'plat-tmall',color:'#FF5722'},
   {key:'jd_pop',name:'京东POP',cls:'plat-jd-pop',color:'#0EA5E9'},
-  {key:'douyin3',name:'抖音3店',cls:'plat-douyin3',color:'#EC4899'},
-  {key:'douyin4',name:'抖音4店',cls:'plat-douyin4',color:'#14B8A6'}
+  {key:'tmall_super',name:'猫超',cls:'plat-tmall-super',color:'#059669'},
+  {key:'jd',name:'京东自营',cls:'plat-jd',color:'#2563EB'},
+  {key:'douyin1',name:'抖1',cls:'plat-douyin1',color:'#7C3AED'},
+  {key:'douyin2',name:'抖2',cls:'plat-douyin2',color:'#F59E0B'},
+  {key:'douyin3',name:'抖3',cls:'plat-douyin3',color:'#EC4899'},
+  {key:'douyin4',name:'抖4',cls:'plat-douyin4',color:'#14B8A6'},
+  {key:'pdd',name:'PDD专营店',cls:'plat-pdd',color:'#DC2626'}
 ];
 var STORAGE_KEY = 'ecom_dashboard_data_v2';
 var TARGETS_KEY = 'ecom_dashboard_targets_v1';
@@ -576,7 +577,7 @@ function loadHistory(){
   var dates=Object.keys(data).sort().reverse();
   var tbody=document.getElementById('historyBody');
   tbody.innerHTML='';
-  if(dates.length===0){tbody.innerHTML='<tr><td colspan="10" style="text-align:center;padding:24px;color:#888780;">暂无录入数据</td></tr>';return;}
+  if(dates.length===0){tbody.innerHTML='<tr><td colspan="13" style="text-align:center;padding:24px;color:#888780;">暂无录入数据</td></tr>';return;}
   dates.slice(0,30).forEach(function(dt){
     var dayData=data[dt]||{};
     var totalGmv=0;
@@ -1174,10 +1175,10 @@ function renderShareChart(plats,byPlatform,prevByPlatform){
       ctx.save();ctx.textAlign='center';ctx.textBaseline='middle';
       meta.data.forEach(function(el,i){
         if(totalVal<=0||values[i]<=0)return;
-        var pct=(values[i]/totalVal*100).toFixed(1)+'%';
+        var pct=(values[i]/totalVal*100).toFixed(0)+'%';
         var angle=(el.startAngle+el.endAngle)/2;
-        var nameR=el.outerRadius*1.1;
-        var pctR=el.outerRadius*0.65;
+        var nameR=el.outerRadius*1.18;
+        var pctR=el.outerRadius*0.82;
         var xName=el.x+Math.cos(angle)*nameR;
         var yName=el.y+Math.sin(angle)*nameR;
         var xPct=el.x+Math.cos(angle)*pctR;
@@ -1379,27 +1380,37 @@ function getMTD(){
   /* MTD ends at yesterday (today's data may be incomplete) */
   var yesterday=new Date(today);yesterday.setDate(yesterday.getDate()-1);
   var end=formatDate(yesterday);
-  /* Start = 上月27日 */
-  var startYear=today.getFullYear();
-  var startMonth=today.getMonth()-1; /* 0-based, 上月 */
-  if(startMonth<0){startMonth=11;startYear--;}
-  var start=new Date(startYear,startMonth,27);
+  /* Start = 本月27日(若day>=27, 进入次月追踪) 或 上月27日 */
+  var s=mtdStart();
+  var start=new Date(s.y,s.m,27);
   return{from:formatDate(start),to:end};
 }
 
-/* Calculate time progress % for the MTD tracking period (27th to 26th = one month) */
+/* 进度周期起点: 若 today.day>=27 则本月27日起(进入次月追踪), 否则上月27日起 */
+function mtdStart(){
+  var now=new Date();
+  var today=new Date(now.getFullYear(),now.getMonth(),now.getDate());
+  var y=today.getFullYear(), m=today.getMonth();
+  if(today.getDate()>=27){
+    return {y:y,m:m}; /* 本月27日 */
+  }else{
+    var sy=y, sm=m-1;
+    if(sm<0){sm=11;sy--;}
+    return {y:sy,m:sm}; /* 上月27日 */
+  }
+}
+/* Calculate time progress % for the MTD tracking period (27th to 次月26th = one month) */
 function getTimeProgress(){
   var now=new Date();
   /* Normalize to midnight */
   var today=new Date(now.getFullYear(),now.getMonth(),now.getDate());
   var yesterday=new Date(today);yesterday.setDate(yesterday.getDate()-1);
-  /* Tracking period start: 上月27日 */
-  var startYear=today.getFullYear();
-  var startMonth=today.getMonth()-1;
-  if(startMonth<0){startMonth=11;startYear--;}
-  var start=new Date(startYear,startMonth,27);
-  /* Tracking period end: 本月26日 (one full month from 27th) */
-  var end=new Date(today.getFullYear(),today.getMonth(),26);
+  var s=mtdStart();
+  var start=new Date(s.y,s.m,27);
+  /* 周期终点: 起点所在月的次月26日 */
+  var ey=s.y, em=s.m+1;
+  if(em>11){em=0;ey++;}
+  var end=new Date(ey,em,26);
   /* Day count using date-only midnight values */
   var totalDays=Math.round((end-start)/86400000)+1; /* inclusive both ends */
   var elapsedDays=Math.round((yesterday-start)/86400000)+1;
@@ -1409,10 +1420,14 @@ function getTimeProgress(){
   return elapsedDays/totalDays*100;
 }
 
-/* Get target year-month key: always the current month (the month containing today) */
+/* Get target year-month key: day>=27 进入次月, 否则当月 */
 function getTargetMonthKey(){
   var today=new Date();
-  return today.getFullYear()+'-'+String(today.getMonth()+1).padStart(2,'0');
+  var y=today.getFullYear(), m=today.getMonth();
+  if(today.getDate()>=27){
+    m+=1; if(m>11){m=0;y++;}
+  }
+  return y+'-'+String(m+1).padStart(2,'0');
 }
 
 /* Load target input rows into settings UI */
